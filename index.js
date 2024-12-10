@@ -32,8 +32,8 @@ app.use(cors({
 
 
 
-app.use('/signin', signupRoutes);
-app.use('/signup', signinRoutes);
+app.use('/auth', signupRoutes);
+app.use('/auth', signinRoutes);
 app.use('/users', userRoutes);
 app.use('/newsEn', newsRoutes);
 app.use('/video', videoRoutes);

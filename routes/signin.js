@@ -8,7 +8,7 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 const USERS_TABLE = 'Users';
 
-router.post('/', async (req, res) => {
+router.post('/signin', async (req, res) => {
   try {
     const { email, password } = req.body;
     console.log(req.body)

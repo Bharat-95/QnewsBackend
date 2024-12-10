@@ -9,7 +9,7 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 const USERS_TABLE = "Users";
 
-router.post("/", async (req, res) => {
+router.post("/signup", async (req, res) => {
   try {
     const { email, password, firstName, lastName, phoneNumber, role } =
       req.body;
