@@ -27,7 +27,7 @@ app.use(cors({
   origin: '*', // This allows all origins. If you need to limit it, use your Amplify domain.
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }));
 
 
