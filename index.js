@@ -24,12 +24,11 @@ const port = 4000;
 app.use(express.json());
 
 app.use(cors({
-  origin: '*', // This allows all origins. If you need to limit it, use your Amplify domain.
+  origin: '*',
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Referrer'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }));
-
 
 
 
