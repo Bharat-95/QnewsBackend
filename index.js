@@ -5,9 +5,9 @@ const AWS = require('aws-sdk');
 
 
 AWS.config.update({
-  accessKeyId: "AKIAXWMA6BMGA22NZWUT",
-  secretAccessKey: "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",
-  region: "ap-south-1",
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
 });
 
 const signupRoutes = require('./routes/signup');
