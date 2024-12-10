@@ -23,13 +23,10 @@ const port = 4000;
 
 app.use(express.json());
 
-const corsOptions = {
-  origin: 'https://main.d3gbdabqclhexj.amplifyapp.com', // Replace with your Amplify frontend URL
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'], 
-};
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: '*', // Allow all origins
+  credentials: true, // Allow cookies or Authorization headers if needed
+}));
 
 
 
