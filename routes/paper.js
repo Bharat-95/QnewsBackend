@@ -40,7 +40,7 @@ router.post("/", upload.fields([{ name: "file" }, { name: "thumbnail" }]), async
     const thumbnailUploadResult = await s3
       .upload({
         Bucket: "qnewsimages", // Your S3 bucket name
-        Key: `thumbnails/${uuidv4()}.jpg`, // Unique key for the thumbnail
+        Key: `papers/${uuidv4()}.jpg`, // Unique key for the thumbnail
         Body: thumbnailFile.buffer,
         ContentType: thumbnailFile.mimetype, // Ensure correct MIME type
       })
