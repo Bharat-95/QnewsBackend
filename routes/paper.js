@@ -9,49 +9,65 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const table = "E-paper";  
 const upload = multer();
 
-router.post("/", upload.single("file"), async (req, res) => {
+router.post("/", upload.fields([{ name: "file" }, { name: "thumbnail" }]), async (req, res) => {
   try {
-    const {
-      date,
-      month,
-      year,
-    } = req.body;
+    const { date, month, year } = req.body;
+    const files = req.files;
 
-    const file = req.file; 
+    // Validate inputs
+    if (!files || !files.file || !files.thumbnail) {
+      return res.status(400).json({ message: "Both file and thumbnail are required" });
+    }
 
-    if (!file) return res.status(400).json({ message: "File is required" });
     if (!date || !month || !year) {
       return res.status(400).json({ message: "Date, Month, and Year are required" });
     }
 
-    // Upload the paper file (PDF, DOCX, etc.) to the S3 bucket
-    const fileUploadResult = await s3
+    const paperFile = files.file[0]; // Paper file
+    const thumbnailFile = files.thumbnail[0]; // Thumbnail file
+
+    // Upload paper to S3
+    const paperUploadResult = await s3
       .upload({
-        Bucket: "qnewsimages", // Your new S3 bucket name
-        Key: `papers/${uuidv4()}.pdf`, // Store the paper in the papers directory with a unique key
-        Body: file.buffer,
-        ContentType: file.mimetype,  // Ensure correct MIME type
+        Bucket: "qnewsimages", // Your S3 bucket name
+        Key: `papers/${uuidv4()}.pdf`, // Unique key for the paper file
+        Body: paperFile.buffer,
+        ContentType: paperFile.mimetype, // Ensure correct MIME type
       })
       .promise();
 
-    const paperId = uuidv4();  // Unique identifier for the paper
+    // Upload thumbnail to S3
+    const thumbnailUploadResult = await s3
+      .upload({
+        Bucket: "qnewsimages", // Your S3 bucket name
+        Key: `thumbnails/${uuidv4()}.jpg`, // Unique key for the thumbnail
+        Body: thumbnailFile.buffer,
+        ContentType: thumbnailFile.mimetype, // Ensure correct MIME type
+      })
+      .promise();
+
+    // Create a unique ID for the paper
+    const paperId = uuidv4();
+
+    // Metadata to store in DynamoDB
     const item = {
       paperId,
-      fileUrl: fileUploadResult.Location,  // Store the file URL from S3
+      fileUrl: paperUploadResult.Location, // S3 URL of the paper
+      thumbnailUrl: thumbnailUploadResult.Location, // S3 URL of the thumbnail
       date,
       month,
       year,
       status: "Pending", // Default status
-      createdAt: new Date().toISOString(),  // Store creation timestamp
+      createdAt: new Date().toISOString(), // Timestamp of creation
     };
 
-    // Store metadata in the DynamoDB E-paper table
+    // Store metadata in DynamoDB
     await dynamoDB.put({ TableName: table, Item: item }).promise();
 
-    res.status(200).json({ success: true, message: "Paper added successfully", paperId });
+    res.status(200).json({ success: true, message: "Paper and thumbnail added successfully", paperId });
   } catch (error) {
-    console.error("Error uploading paper:", error);
-    res.status(500).json({ message: "Error adding paper", error });
+    console.error("Error uploading paper and thumbnail:", error);
+    res.status(500).json({ message: "Error adding paper and thumbnail", error });
   }
 });
 
