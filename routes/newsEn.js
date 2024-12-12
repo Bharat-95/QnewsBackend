@@ -103,6 +103,8 @@ router.put("/:newsId", async (req, res) => {
   const { newsId } = req.params;
   const fieldsToUpdate = req.body;
 
+  console.log(req.body)
+
   try {
     if (Object.keys(fieldsToUpdate).length === 0) {
       return res.status(400).json({ message: "No fields provided for update" });
