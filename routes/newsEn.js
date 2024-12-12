@@ -113,10 +113,18 @@ router.put("/:newsId", async (req, res) => {
     const expressionAttributeValues = {};
 
     Object.entries(fieldsToUpdate).forEach(([key, value]) => {
+      // Exclude "newsId" from being updated
+      if (key === "newsId") {
+        return;
+      }
       updateExpression.push(`#${key} = :${key}`);
       expressionAttributeNames[`#${key}`] = key;
       expressionAttributeValues[`:${key}`] = value;
     });
+
+    if (updateExpression.length === 0) {
+      return res.status(400).json({ message: "No valid fields provided for update" });
+    }
 
     const params = {
       TableName: table,
