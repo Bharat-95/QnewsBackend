@@ -108,6 +108,10 @@ router.put("/:newsId", async (req, res) => {
       return res.status(400).json({ message: "No fields provided for update" });
     }
 
+    if ("newsId" in fieldsToUpdate) {
+      return res.status(400).json({ message: "newsId cannot be updated" });
+    }
+
     const updateExpression = [];
     const expressionAttributeNames = {};
     const expressionAttributeValues = {};
