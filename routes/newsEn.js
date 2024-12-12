@@ -477,12 +477,10 @@ router.put("/:newsId/rate", async (req, res) => {
   const { newsId } = req.params;
   const { userEmail, rating } = req.body;
 
-  console.log(req.body);
-
   if (!userEmail || !rating || rating < 1 || rating > 5) {
     return res
       .status(400)
-      .json({ message: "Valid userId and rating (1-5) are required" });
+      .json({ message: "Valid userEmail and rating (1-5) are required" });
   }
 
   try {
@@ -491,17 +489,22 @@ router.put("/:newsId/rate", async (req, res) => {
       Key: { newsId },
       UpdateExpression: `
         SET #ratings.#total = if_not_exists(#ratings.#total, :start) + :newRating,
-            #ratings.#count = if_not_exists(#ratings.#count, :start) + :inc
+            #ratings.#count = if_not_exists(#ratings.#count, :start) + :inc,
+            #ratings.#users = list_append(if_not_exists(#ratings.#users, :emptyList), :userEmail)
       `,
+      ConditionExpression: "not contains(#ratings.#users, :userEmail)", // Prevent duplicate rating
       ExpressionAttributeNames: {
         "#ratings": "ratings",
-        "#total": "total",   
-        "#count": "count",   
+        "#total": "total",
+        "#count": "count",
+        "#users": "users", // List of users who have rated
       },
       ExpressionAttributeValues: {
         ":start": 0,
         ":newRating": rating,
         ":inc": 1,
+        ":userEmail": [userEmail], // Add userEmail to list
+        ":emptyList": [], // Initialize empty list if it doesn't exist
       },
       ReturnValues: "ALL_NEW",
     };
@@ -510,7 +513,6 @@ router.put("/:newsId/rate", async (req, res) => {
 
     const newAverageRating = result.Attributes.ratings.total / result.Attributes.ratings.count;
 
-
     res.status(200).json({
       success: true,
       message: "Rating added successfully",
@@ -518,6 +520,10 @@ router.put("/:newsId/rate", async (req, res) => {
       updatedItem: result.Attributes,
     });
   } catch (error) {
+    if (error.code === "ConditionalCheckFailedException") {
+      return res.status(400).json({ message: "You have already rated this news." });
+    }
+
     res.status(500).json({ error: "Error adding rating", details: error });
   }
 });
