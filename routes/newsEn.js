@@ -50,6 +50,8 @@ router.post("/", upload.single("image"), async (req, res) => {
       tag,
     } = req.body;
 
+    console.log(req.body)
+
     const image = req.file;
 
     if (!image) return res.status(400).json({ message: "Image is required" });
