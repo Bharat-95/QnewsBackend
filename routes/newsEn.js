@@ -101,9 +101,7 @@ router.post("/", upload.single("image"), async (req, res) => {
 
 router.put("/:newsId", async (req, res) => {
   const { newsId } = req.params;
-  const fieldsToUpdate = req.body;
-
-  console.log(req.body)
+  let fieldsToUpdate = req.body;
 
   try {
     if (Object.keys(fieldsToUpdate).length === 0) {
@@ -114,14 +112,27 @@ router.put("/:newsId", async (req, res) => {
       return res.status(400).json({ message: "newsId cannot be updated" });
     }
 
+    // Ensure specific fields remain strings and match "Yes" or "No"
+    const allowedStringFields = ["isMain", "isSub1", "isSub2"];
+    fieldsToUpdate = Object.entries(fieldsToUpdate).reduce((acc, [key, value]) => {
+      if (allowedStringFields.includes(key)) {
+        if (value !== "Yes" && value !== "No") {
+          throw new Error(`Invalid value for ${key}. Allowed values are "Yes" or "No".`);
+        }
+      }
+      acc[key] = value; // Preserve the value as it is
+      return acc;
+    }, {});
+
+    // Build the DynamoDB UpdateExpression and attributes
     const updateExpression = [];
     const expressionAttributeNames = {};
     const expressionAttributeValues = {};
 
     Object.entries(fieldsToUpdate).forEach(([key, value]) => {
       updateExpression.push(`#${key} = :${key}`);
-      expressionAttributeNames[`#${key}`] = key;
-      expressionAttributeValues[`:${key}`] = value;
+      expressionAttributeNames[`#${key}`] = key; // Keep field names case-sensitive
+      expressionAttributeValues[`:${key}`] = value; // Keep values unchanged
     });
 
     const params = {
@@ -141,9 +152,13 @@ router.put("/:newsId", async (req, res) => {
       updatedItem: result.Attributes,
     });
   } catch (error) {
-    errorResponse(res, "Error updating news", error);
+    res.status(400).json({
+      success: false,
+      message: error.message || "Error updating news",
+    });
   }
 });
+
 
 
 router.get("/:newsId", async (req, res) => {
