@@ -11,12 +11,12 @@ const upload = multer();
 
 router.post("/", upload.single("thumbnail"), async (req, res) => {
     try {
-      const { URL, titleEn, titleTe } = req.body;
+      const { URL, titleEn, titleTe, category } = req.body;
       const thumbnail = req.file; // Get the uploaded file
 
       console.log(req.body)
     
-      if (!URL || !titleEn || !titleTe || !thumbnail) {
+      if (!URL || !titleEn || !titleTe || !thumbnail || !category) {
         return res.status(400).json({ message: "All fields are required" });
       }
   
@@ -35,6 +35,7 @@ router.post("/", upload.single("thumbnail"), async (req, res) => {
         URL,
         titleEn,
         titleTe,
+        category,
         thumbnail: s3Params.Location, // Save the thumbnail URL
         status: "Pending",
         createdAt: new Date().toISOString(),
