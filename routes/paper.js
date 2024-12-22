@@ -87,6 +87,38 @@ router.get("/", async (req, res) => {
     }
   });
 
+
+  router.get("/:paperId", async (req, res) => {
+    try {
+      const { paperId } = req.params; // Extract the paperId from the URL parameters
+  
+      if (!paperId) {
+        return res.status(400).json({ message: "Paper ID is required" });
+      }
+  
+      // Query DynamoDB to get the details of the selected paper
+      const params = {
+        TableName: table,
+        Key: { paperId },
+      };
+  
+      const data = await dynamoDB.get(params).promise();
+  
+      if (!data.Item) {
+        return res.status(404).json({ message: "Paper not found" });
+      }
+  
+      res.status(200).json({
+        success: true,
+        message: "Paper fetched successfully",
+        data: data.Item,
+      });
+    } catch (error) {
+      console.error("Error fetching paper:", error);
+      res.status(500).json({ message: "Error fetching paper", error });
+    }
+  });
+  
   
 
 module.exports = router;
