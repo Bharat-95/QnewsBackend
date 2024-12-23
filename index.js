@@ -13,9 +13,10 @@ AWS.config.update({
 const signupRoutes = require('./routes/signup');
 const signinRoutes = require('./routes/signin');
 const userRoutes =  require('./routes/users');
-const newsRoutes = require('./routes/newsEn')
-const videoRoutes = require('./routes/video')
-const paperRoutes = require('./routes/paper')
+const newsRoutes = require('./routes/newsEn');
+const videoRoutes = require('./routes/video');
+const paperRoutes = require('./routes/paper');
+const passwordRoutes = require('./routes/password');
 
 const app = express();
 const port = 4000;
@@ -38,6 +39,7 @@ app.use('/users', userRoutes);
 app.use('/newsEn', newsRoutes);
 app.use('/video', videoRoutes);
 app.use('/paper', paperRoutes);
+app.use('/password', passwordRoutes);
 
 
 app.get('/', (req, res) => {
