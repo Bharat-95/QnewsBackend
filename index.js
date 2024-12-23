@@ -39,7 +39,6 @@ app.use('/users', userRoutes);
 app.use('/newsEn', newsRoutes);
 app.use('/video', videoRoutes);
 app.use('/paper', paperRoutes);
-app.use('/password', passwordRoutes);
 
 
 app.get('/', (req, res) => {
