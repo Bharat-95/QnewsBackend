@@ -16,7 +16,7 @@ const userRoutes =  require('./routes/users');
 const newsRoutes = require('./routes/newsEn');
 const videoRoutes = require('./routes/video');
 const paperRoutes = require('./routes/paper');
-const passwordRoutes = require('./routes/password');
+
 
 const app = express();
 const port = 4000;
