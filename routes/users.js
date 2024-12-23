@@ -2,7 +2,6 @@ const express = require('express');
 const AWS = require('aws-sdk');
 const router = express.Router();
 const nodemailer = require('nodemailer');
-const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
@@ -163,7 +162,8 @@ router.delete('/:qnews', async (req, res) => {
         return res.status(404).json({ success: false, message: 'User not found' });
       }
   
-      const otp = crypto.randomInt(100000, 999999).toString();
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
       otpStore[email] = otp; // Store OTP for later verification
   
       const mailOptions = {
