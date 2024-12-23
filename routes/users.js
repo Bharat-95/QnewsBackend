@@ -222,6 +222,7 @@ router.post('/reset-password', async (req, res) => {
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
 
+
   const params = {
     TableName: USERS_TABLE,
     Key: {
