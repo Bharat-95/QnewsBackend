@@ -144,50 +144,49 @@ router.delete('/:qnews', async (req, res) => {
 
   
 
-  router.put('/reset-password', async (req, res) => {
-    const { email, newPassword } = req.body;
-  
-    // Check if the email and newPassword are provided
-    if (!email || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Email and new password are required' });
-    }
-  
-    // Hash the new password using bcrypt
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-  
-    // Set the parameters for DynamoDB update
-    const params = {
-      TableName: USERS_TABLE,
-      Key: {
-        qnews: email, // Assuming 'qnews' is the partition key in DynamoDB
-      },
-      UpdateExpression: 'SET password = :password', // Update password
-      ExpressionAttributeValues: {
-        ':password': hashedPassword, // New hashed password
-      },
-      ReturnValues: 'ALL_NEW', // Return updated values
-    };
-  
-    try {
-      // Update the password in DynamoDB
-      const data = await dynamoDB.update(params).promise();
-  
-  
-      // Send a success response
-      res.status(200).json({
-        success: true,
-        message: 'Password reset successfully.',
-        data: data.Attributes, // Send the updated user data (excluding password)
-      });
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error resetting password',
-        error: error.message,
-      });
-    }
-  });
-  
+router.post('/reset-password', async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword) {
+    return res.status(400).json({ success: false, message: 'Email and new password are required' });
+  }
+
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+
+
+  const params = {
+    TableName: USERS_TABLE,
+    Key: {
+      qnews: email,
+    },
+    UpdateExpression: 'SET password = :password',
+    ExpressionAttributeValues: {
+      ':password': hashedPassword,
+    },
+    ReturnValues: 'ALL_NEW',
+  };
+
+  try {
+    const data = await dynamoDB.update(params).promise();
+
+    delete otpStore[email];
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully.',
+      data: data.Attributes,
+    });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error resetting password',
+      error: error.message,
+    });
+  }
+});
+
 
 module.exports = router;
