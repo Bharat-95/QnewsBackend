@@ -142,120 +142,52 @@ router.delete('/:qnews', async (req, res) => {
   });
 
 
-  router.post('/forgot-password', async (req, res) => {
-    const { email } = req.body;
   
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Email is required' });
+
+  router.put('/reset-password', async (req, res) => {
+    const { email, newPassword } = req.body;
+  
+    // Check if the email and newPassword are provided
+    if (!email || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Email and new password are required' });
     }
   
+    // Hash the new password using bcrypt
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+  
+    // Set the parameters for DynamoDB update
     const params = {
       TableName: USERS_TABLE,
       Key: {
-        qnews: email,
+        qnews: email, // Assuming 'qnews' is the partition key in DynamoDB
       },
+      UpdateExpression: 'SET password = :password', // Update password
+      ExpressionAttributeValues: {
+        ':password': hashedPassword, // New hashed password
+      },
+      ReturnValues: 'ALL_NEW', // Return updated values
     };
   
     try {
-      const data = await dynamoDB.get(params).promise();
-      if (!data.Item) {
-        return res.status(404).json({ success: false, message: 'User not found' });
-      }
+      // Update the password in DynamoDB
+      const data = await dynamoDB.update(params).promise();
   
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      otpStore[email] = otp; // Store OTP for later verification
   
-      // EmailJS Integration
-      const emailJSParams = {
-        service_id: 'service_zemecne', // Replace with your EmailJS Service ID
-        template_id: 'template_40yjuqe', // Replace with your EmailJS Template ID
-        user_id: 'y7xRvo7Xp8BAipO4x', // Replace with your EmailJS Public Key
-        template_params: {
-          email: email,
-          otp: otp,
-        },
-      };
-  
-      await emailjs.send(emailJSParams.service_id, emailJSParams.template_id, emailJSParams.template_params, emailJSParams.user_id);
-  
+      // Send a success response
       res.status(200).json({
         success: true,
-        message: 'OTP sent to your email address.',
+        message: 'Password reset successfully.',
+        data: data.Attributes, // Send the updated user data (excluding password)
       });
     } catch (error) {
-      console.error('Error sending OTP:', error);
+      console.error('Error resetting password:', error);
       res.status(500).json({
         success: false,
-        message: 'Error sending OTP',
+        message: 'Error resetting password',
         error: error.message,
       });
     }
   });
-
-router.post('/verify-otp', (req, res) => {
-  const { email, otp } = req.body;
-
-  if (!email || !otp) {
-    return res.status(400).json({ success: false, message: 'Email and OTP are required' });
-  }
-
-
-  if (otpStore[email] !== otp) {
-    return res.status(400).json({ success: false, message: 'Invalid OTP' });
-  }
-
-
-  res.status(200).json({
-    success: true,
-    message: 'OTP verified successfully. You can now reset your password.',
-  });
-});
-
-
-
-router.post('/reset-password', async (req, res) => {
-  const { email, newPassword } = req.body;
-
-  if (!email || !newPassword) {
-    return res.status(400).json({ success: false, message: 'Email and new password are required' });
-  }
-
-
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-
-
-  const params = {
-    TableName: USERS_TABLE,
-    Key: {
-      qnews: email,
-    },
-    UpdateExpression: 'SET password = :password',
-    ExpressionAttributeValues: {
-      ':password': hashedPassword,
-    },
-    ReturnValues: 'ALL_NEW',
-  };
-
-  try {
-    const data = await dynamoDB.update(params).promise();
-
-    delete otpStore[email];
-
-    res.status(200).json({
-      success: true,
-      message: 'Password reset successfully.',
-      data: data.Attributes,
-    });
-  } catch (error) {
-    console.error('Error resetting password:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error resetting password',
-      error: error.message,
-    });
-  }
-});
-
+  
 
 module.exports = router;
