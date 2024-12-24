@@ -3,6 +3,7 @@ const AWS = require('aws-sdk');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
+const emailjs = require('emailjs-com');
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const USERS_TABLE = 'Users';
@@ -143,7 +144,6 @@ router.delete('/:qnews', async (req, res) => {
 
   router.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
-    console.log("email", req.body);
   
     if (!email) {
       return res.status(400).json({ success: false, message: 'Email is required' });
@@ -163,17 +163,20 @@ router.delete('/:qnews', async (req, res) => {
       }
   
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
       otpStore[email] = otp; // Store OTP for later verification
   
-      const mailOptions = {
-        from: 'qgroupmedia1@gmail.com',
-        to: email,
-        subject: 'Password Reset OTP',
-        text: `Your OTP for resetting your password is: ${otp}`,
+      // EmailJS Integration
+      const emailJSParams = {
+        service_id: 'service_zemecne', // Replace with your EmailJS Service ID
+        template_id: 'template_40yjuqe', // Replace with your EmailJS Template ID
+        user_id: 'y7xRvo7Xp8BAipO4x', // Replace with your EmailJS Public Key
+        template_params: {
+          email: email,
+          otp: otp,
+        },
       };
   
-      await transporter.sendMail(mailOptions);
+      await emailjs.send(emailJSParams.service_id, emailJSParams.template_id, emailJSParams.template_params, emailJSParams.user_id);
   
       res.status(200).json({
         success: true,
@@ -188,7 +191,6 @@ router.delete('/:qnews', async (req, res) => {
       });
     }
   });
-
 
 router.post('/verify-otp', (req, res) => {
   const { email, otp } = req.body;
