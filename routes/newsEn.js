@@ -44,7 +44,6 @@ router.post("/", upload.single("image"), async (req, res) => {
       newsTe,
       category,
       employeeId,
-      tag,
     } = req.body;
 
     console.log(req.body)
@@ -52,7 +51,7 @@ router.post("/", upload.single("image"), async (req, res) => {
     const image = req.file;
 
     if (!image) return res.status(400).json({ message: "Image is required" });
-    if (!headlineEn ||!headlineTe || !newsEn || !newsTe || !category || !employeeId || !tag) {
+    if (!headlineEn ||!headlineTe || !newsEn || !newsTe || !category || !employeeId) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -74,7 +73,6 @@ router.post("/", upload.single("image"), async (req, res) => {
       newsTe,
       category,
       employeeId,
-      tag,
       image: imageUploadResult.Location,
       status: "Pending",
       createdAt: new Date().toISOString(),
