@@ -22,7 +22,6 @@ const fetchLiveVideosFromChannel = async () => {
           reject('Error parsing XML');
         } else {
           const entries = result.feed.entry || [];
-          
 
           // Filter out live videos based on the title or other metadata indicating live stream
           const liveVideos = entries
@@ -40,13 +39,15 @@ const fetchLiveVideosFromChannel = async () => {
                   published: entry.published ? entry.published[0] : null,
                   link: entry.link ? entry.link[0].$.href : null,
                   thumbnail: thumbnail,
+                  liveBroadcastContent: liveBroadcastContent,
                 };
               }
               return null; // Return null if it's not a live video
             })
             .filter(video => video !== null); // Remove null entries (non-live videos)
 
-            resolve(liveVideos[0] || null);
+          // If no live videos, resolve with null
+          resolve(liveVideos.length > 0 ? liveVideos[0] : null);
         }
       });
     });
@@ -56,17 +57,26 @@ const fetchLiveVideosFromChannel = async () => {
   }
 };
 
-
 // New route to fetch live videos
 router.get("/", async (req, res) => {
   try {
     console.log("Fetching live videos...");
     const liveVideos = await fetchLiveVideosFromChannel();
-    res.status(200).json({
-      success: true,
-      message: "Live videos fetched successfully",
-      data: liveVideos,
-    });
+    
+    // Check if there are live videos or not and respond accordingly
+    if (liveVideos) {
+      res.status(200).json({
+        success: true,
+        message: "Live videos fetched successfully",
+        data: liveVideos,
+      });
+    } else {
+      res.status(200).json({
+        success: false,
+        message: "No live videos available",
+        data: [],
+      });
+    }
   } catch (error) {
     console.error("Error fetching live videos:", error);
     res.status(500).json({ message: "Error fetching live videos", error: error.message });
