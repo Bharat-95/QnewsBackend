@@ -25,15 +25,25 @@ const fetchVideosFromChannel = async (channelId) => {
           reject('Error parsing XML');
         } else {
           const entries = result.feed.entry || [];
-          const videos = entries.map(entry => {
-            return {
-              videoId: entry['yt:videoId'][0],
-              title: entry.title[0],
-              published: entry.published[0],
-              link: entry.link[0].$.href,
-            };
-          });
-          resolve(videos);
+          
+          // Filter out videos with "Shorts" or "#" in the title
+          const filteredVideos = entries
+            .map(entry => {
+              const title = entry.title[0];
+              // Exclude videos with "Shorts" or "#" in the title
+              if (title.includes("Shorts") || title.includes("#")) {
+                return null; // Return null for these videos, which will be filtered out later
+              }
+              return {
+                videoId: entry['yt:videoId'][0],
+                title: title,
+                published: entry.published[0],
+                link: entry.link[0].$.href,
+              };
+            })
+            .filter(video => video !== null); // Remove the null entries (videos that were excluded)
+
+          resolve(filteredVideos);
         }
       });
     });
@@ -57,7 +67,7 @@ router.get("/", async (req, res) => {
     // Sort videos by publish date (descending order)
     const sortedVideos = allVideos.sort((a, b) => new Date(b.published) - new Date(a.published));
 
-    console.log(sortedVideos);
+    console.log("final videos:", sortedVideos.slice(0,20))
 
     // Return the top 20 most recent videos
     res.status(200).json({
