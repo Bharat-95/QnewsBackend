@@ -15,14 +15,12 @@ const fetchLiveVideosFromChannel = async () => {
     const parser = new xml2js.Parser();
     const xmlData = response.data;
 
-    console.log("xml:", xmlData)
     return new Promise((resolve, reject) => {
       parser.parseString(xmlData, (err, result) => {
         if (err) {
           console.error("Error parsing XML:", err);
           reject('Error parsing XML');
         } else {
-            console.log("Parsed XML Result:", result);
           const entries = result.feed.entry || [];
           
           // Filter out live videos based on the title or other metadata indicating live stream
@@ -32,6 +30,8 @@ const fetchLiveVideosFromChannel = async () => {
               const videoId = entry['yt:videoId'] ? entry['yt:videoId'][0] : null;
               const thumbnail = entry['media:thumbnail'] ? entry['media:thumbnail'][0].$.url : null;
               const liveBroadcastContent = entry['yt:liveBroadcastContent'] ? entry['yt:liveBroadcastContent'][0] : null;
+
+              console.log("live:", liveBroadcastContent)
               
               // Check if it's a live video based on the title or liveBroadcastContent field
               if (videoId && (title && (title.includes("Live") || liveBroadcastContent === "live"))) {
