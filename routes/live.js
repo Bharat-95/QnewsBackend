@@ -21,6 +21,7 @@ const fetchLiveVideosFromChannel = async () => {
           console.error("Error parsing XML:", err);
           reject('Error parsing XML');
         } else {
+            console.log("Parsed XML Result:", result);
           const entries = result.feed.entry || [];
           
           // Filter out live videos based on the title or other metadata indicating live stream
