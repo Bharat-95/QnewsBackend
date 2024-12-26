@@ -23,6 +23,7 @@ const fetchLiveVideosFromChannel = async () => {
         } else {
           const entries = result.feed.entry || [];
           
+
           // Filter out live videos based on the title or other metadata indicating live stream
           const liveVideos = entries
             .map(entry => {
@@ -30,8 +31,8 @@ const fetchLiveVideosFromChannel = async () => {
               const videoId = entry['yt:videoId'] ? entry['yt:videoId'][0] : null;
               const thumbnail = entry['media:thumbnail'] ? entry['media:thumbnail'][0].$.url : null;
               const liveBroadcastContent = entry['yt:liveBroadcastContent'] ? entry['yt:liveBroadcastContent'][0] : null;
-
-              console.log("live:", liveBroadcastContent)
+              
+              console.log("live :" , liveVideos);
               
               // Check if it's a live video based on the title or liveBroadcastContent field
               if (videoId && (title && (title.includes("Live") || liveBroadcastContent === "live"))) {
