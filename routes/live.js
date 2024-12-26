@@ -33,7 +33,8 @@ const fetchLiveVideosFromChannel = async () => {
               console.log(thumbnail)
 
               // Check if the URL contains "live" to determine if it's a live video
-              if (videoId && link && link.includes("livestreaming")) {
+              if (videoId && title && title.toLowerCase().includes("live"))
+                {
                 console.log("Live video URL:", link);
                 return {
                   videoId: videoId,
