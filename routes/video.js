@@ -67,7 +67,6 @@ router.get("/", async (req, res) => {
     // Sort videos by publish date (descending order)
     const sortedVideos = allVideos.sort((a, b) => new Date(b.published) - new Date(a.published));
 
-    console.log("final videos:", sortedVideos.slice(0,20))
 
     // Return the top 20 most recent videos
     res.status(200).json({
