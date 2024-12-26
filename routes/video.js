@@ -19,6 +19,8 @@ const fetchVideosFromChannel = async (channelId) => {
     const parser = new xml2js.Parser();
     const xmlData = response.data;
 
+    console.log("Youtube :", xmlData);
+
     return new Promise((resolve, reject) => {
       parser.parseString(xmlData, (err, result) => {
         if (err) {
