@@ -56,7 +56,7 @@ const fetchLiveVideosFromChannel = async () => {
 };
 
 // New route to fetch live videos
-router.get("/live", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     console.log("Fetching live videos...");
     const liveVideos = await fetchLiveVideosFromChannel();
