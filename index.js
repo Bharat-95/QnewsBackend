@@ -16,6 +16,7 @@ const userRoutes =  require('./routes/users');
 const newsRoutes = require('./routes/newsEn');
 const videoRoutes = require('./routes/video');
 const paperRoutes = require('./routes/paper');
+const liveRoutes = require('./routes/live');
 
 
 const app = express();
@@ -39,6 +40,7 @@ app.use('/users', userRoutes);
 app.use('/newsEn', newsRoutes);
 app.use('/video', videoRoutes);
 app.use('/paper', paperRoutes);
+app.use('/live', liveRoutes);
 
 
 app.get('/', (req, res) => {
