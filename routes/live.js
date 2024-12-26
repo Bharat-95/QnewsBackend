@@ -32,8 +32,6 @@ const fetchLiveVideosFromChannel = async () => {
               const thumbnail = entry['media:thumbnail'] ? entry['media:thumbnail'][0].$.url : null;
               const liveBroadcastContent = entry['yt:liveBroadcastContent'] ? entry['yt:liveBroadcastContent'][0] : null;
               
-              console.log("live :" , liveVideos);
-              
               // Check if it's a live video based on the title or liveBroadcastContent field
               if (videoId && (title && (title.includes("Live") || liveBroadcastContent === "live"))) {
                 return {
@@ -57,6 +55,8 @@ const fetchLiveVideosFromChannel = async () => {
     throw new Error('Failed to fetch live videos');
   }
 };
+
+console.log("live :", liveVideos);
 
 // New route to fetch live videos
 router.get("/", async (req, res) => {
