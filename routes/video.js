@@ -19,8 +19,6 @@ const fetchVideosFromChannel = async (channelId) => {
     const parser = new xml2js.Parser();
     const xmlData = response.data;
 
-    console.log("Youtube :", xmlData);
-
     return new Promise((resolve, reject) => {
       parser.parseString(xmlData, (err, result) => {
         if (err) {
@@ -58,6 +56,8 @@ router.get("/", async (req, res) => {
 
     // Sort videos by publish date (descending order)
     const sortedVideos = allVideos.sort((a, b) => new Date(b.published) - new Date(a.published));
+
+    console.log(sortedVideos);
 
     // Return the top 20 most recent videos
     res.status(200).json({
