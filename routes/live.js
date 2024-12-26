@@ -30,7 +30,7 @@ const fetchLiveVideosFromChannel = async () => {
               const videoId = entry['yt:videoId'] ? entry['yt:videoId'][0] : null;
               const thumbnail = entry['media:thumbnail'] ? entry['media:thumbnail'][0].$.url : null;
               const link = entry.link ? entry.link[0].$.href : null;
-              console.log(link)
+              console.log(thumbnail)
 
               // Check if the URL contains "live" to determine if it's a live video
               if (videoId && link && link.includes("livestreaming")) {
