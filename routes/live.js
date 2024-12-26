@@ -33,7 +33,7 @@ const fetchLiveVideosFromChannel = async () => {
               const liveBroadcastContent = entry['yt:liveBroadcastContent'] ? entry['yt:liveBroadcastContent'][0] : null;
               
               // Check if it's a live video based on the title or liveBroadcastContent field
-              if (videoId && (title && (title.includes("Live") || liveBroadcastContent === "live"))) {
+              if (videoId && (title &&  liveBroadcastContent === "live")) {
                 return {
                   videoId: videoId,
                   title: title,
@@ -56,7 +56,6 @@ const fetchLiveVideosFromChannel = async () => {
   }
 };
 
-console.log("live :", liveVideos);
 
 // New route to fetch live videos
 router.get("/", async (req, res) => {
