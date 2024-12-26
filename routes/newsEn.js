@@ -24,19 +24,30 @@ const errorResponse = (res, message, error) => {
 
 router.get("/", async (req, res) => {
   try {
-    const params = { TableName: table };
-    const data = await dynamoDB.scan(params).promise();
+    let allItems = [];
+    let lastEvaluatedKey = null;
+
+    do {
+      const params = {
+        TableName: table,
+        ExclusiveStartKey: lastEvaluatedKey, // Pass the last evaluated key for pagination
+      };
+      
+      const data = await dynamoDB.scan(params).promise();
+      allItems = allItems.concat(data.Items); // Add the fetched items to the allItems array
+      lastEvaluatedKey = data.LastEvaluatedKey; // Get the last evaluated key for the next scan
+    } while (lastEvaluatedKey); // Continue scanning if there's more data
 
     res.status(200).json({
       success: true,
-      message: "Fetched news successfully",
-      data: data.Items,
+      message: 'Fetched news successfully',
+      data: allItems,
     });
   } catch (error) {
-    console.error("Error fetching news:", error); // Log the error for debugging
+    console.error('Error fetching news:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching news",
+      message: 'Error fetching news',
       error: error.message,
     });
   }
