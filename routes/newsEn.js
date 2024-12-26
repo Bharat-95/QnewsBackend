@@ -609,15 +609,14 @@ router.get("/:newsId/related", async (req, res) => {
       return res.status(404).json({ success: false, message: "News not found" });
     }
 
-    const { category, tag } = data.Item;
+    const { category } = data.Item;
 
     // Fetch related news based on category or tag (use Query if possible)
     const filterParams = {
       TableName: table,
-      FilterExpression: "category = :category OR tag = :tag",
+      FilterExpression: "category = :category",
       ExpressionAttributeValues: {
         ":category": category,
-        ":tag": tag,
       },
     };
 
