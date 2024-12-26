@@ -7,9 +7,10 @@ const router = express.Router();
 // YouTube Channel ID for specific channel
 const CHANNEL_ID = "UCUVJf9GvRRxUDauQi-qCcfQ";
 
-// Function to fetch videos from a YouTube channel RSS feed
+// Function to fetch live videos from a YouTube channel RSS feed
 const fetchLiveVideosFromChannel = async () => {
   try {
+    console.log(`Fetching live videos from channel ID: ${CHANNEL_ID}`);
     const response = await axios.get(`https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`);
     const parser = new xml2js.Parser();
     const xmlData = response.data;
@@ -17,24 +18,30 @@ const fetchLiveVideosFromChannel = async () => {
     return new Promise((resolve, reject) => {
       parser.parseString(xmlData, (err, result) => {
         if (err) {
+          console.error("Error parsing XML:", err);
           reject('Error parsing XML');
         } else {
           const entries = result.feed.entry || [];
           
+          // Filter out live videos based on the title or other metadata indicating live stream
           const liveVideos = entries
             .map(entry => {
-              const title = entry.title[0];
-              const videoId = entry['yt:videoId'][0];
-              if (title.includes("Live") || entry['yt:liveBroadcastContent'][0] === "live") {
+              const title = entry.title ? entry.title[0] : null;
+              const videoId = entry['yt:videoId'] ? entry['yt:videoId'][0] : null;
+              const thumbnail = entry['media:thumbnail'] ? entry['media:thumbnail'][0].$.url : null;
+              const liveBroadcastContent = entry['yt:liveBroadcastContent'] ? entry['yt:liveBroadcastContent'][0] : null;
+              
+              // Check if it's a live video based on the title or liveBroadcastContent field
+              if (videoId && (title && (title.includes("Live") || liveBroadcastContent === "live"))) {
                 return {
                   videoId: videoId,
                   title: title,
-                  published: entry.published[0],
-                  link: entry.link[0].$.href,
-                  thumbnail: entry['media:thumbnail'][0].$.url,
+                  published: entry.published ? entry.published[0] : null,
+                  link: entry.link ? entry.link[0].$.href : null,
+                  thumbnail: thumbnail,
                 };
               }
-              return null;
+              return null; // Return null if it's not a live video
             })
             .filter(video => video !== null); // Remove null entries (non-live videos)
 
@@ -49,8 +56,9 @@ const fetchLiveVideosFromChannel = async () => {
 };
 
 // New route to fetch live videos
-router.get("/", async (req, res) => {
+router.get("/live", async (req, res) => {
   try {
+    console.log("Fetching live videos...");
     const liveVideos = await fetchLiveVideosFromChannel();
     res.status(200).json({
       success: true,
@@ -59,7 +67,7 @@ router.get("/", async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching live videos:", error);
-    res.status(500).json({ message: "Error fetching live videos", error });
+    res.status(500).json({ message: "Error fetching live videos", error: error.message });
   }
 });
 
