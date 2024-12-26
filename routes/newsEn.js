@@ -33,9 +33,15 @@ router.get("/", async (req, res) => {
       data: data.Items,
     });
   } catch (error) {
-    errorResponse(res, "Error fetching news", error);
+    console.error("Error fetching news:", error); // Log the error for debugging
+    res.status(500).json({
+      success: false,
+      message: "Error fetching news",
+      error: error.message,
+    });
   }
 });
+
 
 
 router.post("/", upload.single("image"), async (req, res) => {
