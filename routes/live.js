@@ -5,7 +5,7 @@ const xml2js = require("xml2js");
 const router = express.Router();
 
 // YouTube Channel ID for specific channel
-const CHANNEL_ID = "UCztpsdYM52VdE3zXOuGGi0g";
+const CHANNEL_ID = "UCUVJf9GvRRxUDauQi-qCcfQ";
 
 // Function to fetch live videos from a YouTube channel RSS feed
 const fetchLiveVideosFromChannel = async () => {
@@ -33,7 +33,7 @@ const fetchLiveVideosFromChannel = async () => {
               const liveBroadcastContent = entry['yt:liveBroadcastContent'] ? entry['yt:liveBroadcastContent'][0] : null;
               
               // Check if it's a live video based on the title or liveBroadcastContent field
-              if (videoId && (title &&  liveBroadcastContent === "live")) {
+              if (videoId && (title && (title.includes("Live") || liveBroadcastContent === "live"))) {
                 return {
                   videoId: videoId,
                   title: title,
@@ -46,7 +46,7 @@ const fetchLiveVideosFromChannel = async () => {
             })
             .filter(video => video !== null); // Remove null entries (non-live videos)
 
-          resolve(liveVideos);
+            resolve(liveVideos[0] || null);
         }
       });
     });
