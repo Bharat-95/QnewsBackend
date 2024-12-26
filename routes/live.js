@@ -5,7 +5,7 @@ const xml2js = require("xml2js");
 const router = express.Router();
 
 // YouTube Channel ID for specific channel
-const CHANNEL_ID = "UCUVJf9GvRRxUDauQi-qCcfQ";
+const CHANNEL_ID = "UCAeD5LAXhTJ8CDfX4BZeGYQ";
 
 // Function to fetch live videos from a YouTube channel RSS feed
 const fetchLiveVideosFromChannel = async () => {
