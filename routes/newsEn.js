@@ -7,7 +7,10 @@ const router = express.Router();
 const s3 = new AWS.S3();
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const table = "NewsEn";
-const upload = multer();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 const errorResponse = (res, message, error) => {
   console.error(message, error);
@@ -37,24 +40,18 @@ router.get("/", async (req, res) => {
 
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const {
-      headlineEn,
-      headlineTe,
-      newsEn,
-      newsTe,
-      category,
-      employeeId,
-    } = req.body;
-
-    console.log(req.body)
-
+    const { headlineEn, headlineTe, newsEn, newsTe, category, employeeId } = req.body;
     const image = req.file;
 
-    if (!image) return res.status(400).json({ message: "Image is required" });
-    if (!headlineEn ||!headlineTe || !newsEn || !newsTe || !category || !employeeId) {
+    // Validation
+    if (!image) {
+      return res.status(400).json({ message: "Image is required" });
+    }
+    if (!headlineEn || !headlineTe || !newsEn || !newsTe || !category || !employeeId) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    // Upload image to S3
     const imageUploadResult = await s3
       .upload({
         Bucket: "qnewsimages",
@@ -62,8 +59,15 @@ router.post("/", upload.single("image"), async (req, res) => {
         Body: image.buffer,
         ContentType: image.mimetype,
       })
-      .promise();
+      .promise()
+      .catch((err) => {
+        console.error("Error uploading image to S3:", err);
+        return res.status(500).json({ message: "Image upload failed" });
+      });
 
+    if (!imageUploadResult) return; // Exit if image upload fails
+
+    // Prepare data for DynamoDB
     const newsId = uuidv4();
     const item = {
       newsId,
@@ -76,16 +80,23 @@ router.post("/", upload.single("image"), async (req, res) => {
       image: imageUploadResult.Location,
       status: "Pending",
       createdAt: new Date().toISOString(),
-      likes: 0, 
-      comments: [], 
+      likes: 0,
+      comments: [],
       ratings: {
         total: 0,
-        count: 0, 
+        count: 0,
       },
     };
 
-    await dynamoDB.put({ TableName: table, Item: item }).promise();
+    // Save data to DynamoDB
+    await dynamoDB
+      .put({
+        TableName: table,
+        Item: item,
+      })
+      .promise();
 
+    // Send success response
     res.status(200).json({ success: true, message: "News added successfully", newsId });
   } catch (error) {
     errorResponse(res, "Error adding news", error);
