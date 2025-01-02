@@ -30,7 +30,8 @@ router.get("/", async (req, res) => {
     do {
       const params = {
         TableName: table,
-        ExclusiveStartKey: lastEvaluatedKey, // Pass the last evaluated key for pagination
+        ExclusiveStartKey: lastEvaluatedKey, 
+        ConsistentRead: true, // Pass the last evaluated key for pagination
       };
       
       const data = await dynamoDB.scan(params).promise();
