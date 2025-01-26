@@ -133,12 +133,7 @@ router.post("/", upload.single("image"), async (req, res) => {
         headlineTe,
         image: imageUploadResult.Location, // Include the news image URL for rich media
       },
-      small_icon: "https://example.com/logo.png", // App logo for notification branding (small icon)
-      large_icon: "https://example.com/logo.png", // App logo displayed as the large icon
-      android_channel_id: "YOUR_ANDROID_CHANNEL_ID", // Ensure notifications use the correct channel
-      big_picture: imageUploadResult.Location, // The large image for the notification
-      android_style: "bigpicture", // Required for rich media notifications on Android
-      android_large_icon: "https://example.com/logo.png", // The icon on the left of the notification
+        // The icon on the left of the notification
       ios_attachments: {
         image: imageUploadResult.Location, // Attach the image for iOS notifications
       },
