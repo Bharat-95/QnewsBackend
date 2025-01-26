@@ -2,6 +2,7 @@ const express = require("express");
 const AWS = require("aws-sdk");
 const multer = require("multer");
 const { v4: uuidv4 } = require("uuid");
+const axios = require('axios');
 
 const router = express.Router();
 const s3 = new AWS.S3();
@@ -114,12 +115,28 @@ router.post("/", upload.single("image"), async (req, res) => {
       })
       .promise();
 
+    // Send push notification using OneSignal
+    const notificationPayload = {
+      app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // Replace with your OneSignal App ID
+      headings: { en: "New News Alert!" },
+      contents: { en: `Check out our latest news: ${headlineEn}` },
+      included_segments: ["Subscribed Users"], // Or use `include_player_ids` if you have tokens
+    };
+
+    await axios.post("https://onesignal.com/api/v1/notifications", notificationPayload, {
+      headers: {
+        Authorization: `Basic ${process.env.ONESIGNAL_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+    });
+
     // Send success response
     res.status(200).json({ success: true, message: "News added successfully", newsId });
   } catch (error) {
     errorResponse(res, "Error adding news", error);
   }
 });
+
 
 
 router.put("/:newsId", async (req, res) => {
