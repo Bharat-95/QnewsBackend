@@ -72,7 +72,7 @@ router.post('/send-notification', async (req, res) => {
 
     // Send notification using OneSignal API
     const payload = {
-      app_id: "2lpcvyaunuprub6syjnkidcwn",
+      app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8",
       include_player_ids: tokens,
       headings: { en: "New Video Alert!" },
       contents: { en: `${title}\nWatch now: ${link}` },
@@ -80,7 +80,7 @@ router.post('/send-notification', async (req, res) => {
 
     await axios.post("https://onesignal.com/api/v1/notifications", payload, {
       headers: {
-        Authorization: " Key os_v2_app_3qg4lmbftvhbli3izk7fclprxb5b63wlt5juu5emrhfs5vubtjkdrfgise5vbmgtyhhlfwwduwg6vckczzzzoms7mokwj255oi3jf5a",
+        Authorization: `Key ${process.env.ONESIGNAL_API_KEY}`,
         "Content-Type": "application/json",
       },
     });
