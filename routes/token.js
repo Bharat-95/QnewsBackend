@@ -1,8 +1,7 @@
 const express = require('express');
 const AWS = require('aws-sdk');
 const router = express.Router();
-const axios = require('axios');
-
+const axios = require('axios'); 
 
 // Initialize DynamoDB document client
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
@@ -81,7 +80,7 @@ router.post('/send-notification', async (req, res) => {
 
     await axios.post("https://onesignal.com/api/v1/notifications", payload, {
       headers: {
-        Authorization: `Basic ${process.env.ONESIGNAL_API_KEY}`,
+        Authorization: "os_v2_app_3qg4lmbftvhbli3izk7fclprxb5b63wlt5juu5emrhfs5vubtjkdrfgise5vbmgtyhhlfwwduwg6vckczzzzoms7mokwj255oi3jf5a",
         "Content-Type": "application/json",
       },
     });
