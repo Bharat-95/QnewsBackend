@@ -15,10 +15,10 @@ router.post('/register-token', async (req, res) => {
   }
 
   const item = {
+    Qnews: subscriptionId, 
     pushToken,
-    subscriptionId,
     createdAt: new Date().toISOString(),
-  }
+  };
   
   try {
     // Store the token in DynamoDB
