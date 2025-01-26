@@ -21,8 +21,7 @@ router.post('/register-token', async (req, res) => {
       pushToken, // The device token (OneSignal ID)
       createdAt: new Date().toISOString(), // Timestamp
     },
-    // Use an alias for the reserved keyword 'token'
-    ConditionExpression: 'attribute_not_exists(#pushToken)',
+    ConditionExpression: 'attribute_not_exists(#pushToken)', // Prevent duplicate tokens
     ExpressionAttributeNames: {
       '#pushToken': 'pushToken', // Alias for the reserved keyword
     },
