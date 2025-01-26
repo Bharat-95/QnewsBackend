@@ -68,7 +68,7 @@ router.post('/send-notification', async (req, res) => {
     // Fetch tokens from DynamoDB
     const params = { TableName: table };
     const result = await dynamoDB.scan(params).promise();
-    const tokens = result.Items.map((item) => item.pushToken);
+    const tokens = result.Items.map((item) => item.subscriptionId); // Use subscriptionId instead of pushToken
 
     if (!tokens || tokens.length === 0) {
       return res.status(400).json({ message: "No valid player IDs found." });
@@ -77,7 +77,7 @@ router.post('/send-notification', async (req, res) => {
     // OneSignal payload
     const payload = {
       app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // Replace with your OneSignal App ID
-      include_player_ids: tokens,
+      include_player_ids: tokens, // Player IDs must be in correct UUID format
       headings: { en: "New Video Alert!" },
       contents: { en: `Watch now: ${link}` },
     };
