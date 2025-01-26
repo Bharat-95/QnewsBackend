@@ -57,46 +57,66 @@ router.get('/get-tokens', async (req, res) => {
   }
 });
 
-router.post('/send-notification', async (req, res) => {
-  const { title, link } = req.body;
 
-  if (!title || !link) {
-    return res.status(400).json({ message: "Title and link are required." });
+router.post('/send-notification', async (req, res) => {
+  const { title, link, headlineTe, image, logo } = req.body;
+
+  // Validate input
+  if (!title || !link || !headlineTe || !image || !logo) {
+    return res.status(400).json({
+      message: "All fields (title, link, headlineTe, image, logo) are required.",
+    });
   }
 
   try {
     // Fetch tokens from DynamoDB
     const params = { TableName: table };
     const result = await dynamoDB.scan(params).promise();
-    const tokens = result.Items.map((item) => item.Qnews); // Use subscriptionId instead of pushToken
+    const tokens = result.Items.map((item) => item.Qnews); // Assuming Qnews holds the subscription ID
 
     if (!tokens || tokens.length === 0) {
       return res.status(400).json({ message: "No valid player IDs found." });
     }
 
-    // OneSignal payload
+    // Prepare OneSignal payload
     const payload = {
-      app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // Replace with your OneSignal App ID
-      include_player_ids: tokens, // Player IDs must be in correct UUID format
-      headings: { en: "New Video Alert!" },
+      app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // Your OneSignal App ID
+      include_player_ids: tokens,
+      headings: { en: title },
       contents: { en: `Watch now: ${link}` },
+      big_picture: image, // Large image in the notification
+      url: link, // URL to open when notification is clicked
+      chrome_web_icon: logo, // Notification icon
     };
 
-    // Send notification
-    const response = await axios.post("https://onesignal.com/api/v1/notifications", payload, {
-      headers: {
-        Authorization: `Basic ${process.env.ONESIGNAL_API_KEY}`, // Correct format
-        "Content-Type": "application/json",
-      },
-    });
+    console.log("Preparing notification payload:", payload);
+
+    // Send notification using OneSignal API
+    const response = await axios.post(
+      "https://onesignal.com/api/v1/notifications",
+      payload,
+      {
+        headers: {
+          Authorization: `Basic ${process.env.ONESIGNAL_API_KEY}`, // OneSignal REST API key
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     console.log("Notification sent successfully:", response.data);
-    res.status(200).json({ message: "Notification sent successfully." });
+    res.status(200).json({
+      message: "Notification sent successfully.",
+      data: response.data,
+    });
   } catch (error) {
-    console.error("OneSignal error:", error.response?.data || error.message);
-    res.status(500).json({ message: "Error sending notification.", error: error.response?.data || error.message });
+    console.error("Error sending notification:", error.response?.data || error.message);
+    res.status(500).json({
+      message: "Error sending notification.",
+      error: error.response?.data || error.message,
+    });
   }
 });
+
 
 
 

@@ -59,14 +59,14 @@ router.get("/", async (req, res) => {
 
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const { headlineEn, headlineTe, newsEn, newsTe, category, employeeId } = req.body;
+    const { headlineEn, headlineTe, newsEn, newsTe, category, employeeId, logoUrl } = req.body; // Accept `logoUrl` from the request body
     const image = req.file;
 
     // Validation
     if (!image) {
       return res.status(400).json({ message: "Image is required" });
     }
-    if (!headlineEn || !headlineTe || !newsEn || !newsTe || !category || !employeeId) {
+    if (!headlineEn || !headlineTe || !newsEn || !newsTe || !category || !employeeId || !logoUrl) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -115,16 +115,29 @@ router.post("/", upload.single("image"), async (req, res) => {
       })
       .promise();
 
-    // Send push notification using OneSignal
+    // Prepare notification payload
     const notificationPayload = {
       app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // Replace with your OneSignal App ID
-      headings: { en: "New News Alert!" },
-      contents: { en: `Check out our latest news: ${headlineEn}` },
-      included_segments: ["All"],// Or use `include_player_ids` if you have tokens
+      headings: { en: "New News Alert!", te: headlineTe }, // Include `headlineTe`
+      contents: {
+        en: `Check out our latest news: ${headlineEn}`,
+        te: `Check out our latest news: ${headlineTe}`,
+      },
+      included_segments: ["All"], // Notify all users
+      data: {
+        newsId, // Attach the news ID as additional data
+        headlineEn,
+        headlineTe,
+        image: imageUploadResult.Location,
+        logo: logoUrl, // Include the logo URL
+      },
+      large_icon: logoUrl, // Add the logo as a large icon
+      big_picture: imageUploadResult.Location, // Add the news image to the notification
     };
 
     console.log("Preparing notification payload:", notificationPayload);
 
+    // Send notification
     const response = await axios.post(
       "https://onesignal.com/api/v1/notifications",
       notificationPayload,
@@ -135,11 +148,15 @@ router.post("/", upload.single("image"), async (req, res) => {
         },
       }
     );
-    
+
     console.log("Notification response:", response.data);
 
     // Send success response
-    res.status(200).json({ success: true, message: "News added successfully", newsId });
+    res.status(200).json({
+      success: true,
+      message: "News added successfully",
+      newsId,
+    });
   } catch (error) {
     errorResponse(res, "Error adding news", error);
   }
