@@ -120,7 +120,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // Replace with your OneSignal App ID
       headings: { en: "New News Alert!" },
       contents: { en: `Check out our latest news: ${headlineEn}` },
-      included_segments: ["Subscribed Users"], // Or use `include_player_ids` if you have tokens
+      included_segments: ["All"],// Or use `include_player_ids` if you have tokens
     };
 
     console.log("Preparing notification payload:", notificationPayload);
