@@ -118,15 +118,13 @@ router.post("/", upload.single("image"), async (req, res) => {
     // Prepare notification payload
     const notificationPayload = {
       app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // Replace with your OneSignal App ID
-      headings: { en: "New News Alert!", te: headlineTe }, // Include `headlineTe`
+      headings: {te: headlineTe }, // Include `headlineTe`
       contents: {
-        en: `Check out our latest news: ${headlineEn}`,
-        te: `Check out our latest news: ${headlineTe}`,
+        te: `${headlineTe}`,
       },
       included_segments: ["All"], // Notify all users
       data: {
         newsId, // Attach the news ID as additional data
-        headlineEn,
         headlineTe,
         image: imageUploadResult.Location, // Include the logo URL
       },
