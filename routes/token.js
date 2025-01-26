@@ -17,7 +17,7 @@ router.post('/register-token', async (req, res) => {
   const params = {
     TableName: 'UserTokens', // Your DynamoDB table name
     Item: {
-      Key: 'Qnews', // Fixed partition key
+      partitionKey: 'Qnews', // Fixed partition key
       subscriptionId, // Unique identifier for the subscription
       pushToken, // The device token (OneSignal ID)
       createdAt: new Date().toISOString(), // Timestamp
