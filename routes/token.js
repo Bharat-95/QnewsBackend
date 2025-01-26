@@ -7,24 +7,22 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 // Route to save user token
 router.post('/register-token', async (req, res) => {
-  const { pushToken, subscriptionId } = req.body; // Extract token from request body
-  console.log(pushToken);
+  const { pushToken, subscriptionId } = req.body; // Extract token and subscription ID from request body
+  console.log(pushToken, subscriptionId);
 
-  if (!pushToken) {
-    return res.status(400).json({ message: 'Token is required.' });
+  if (!pushToken || !subscriptionId) {
+    return res.status(400).json({ message: 'pushToken and subscriptionId are required.' });
   }
 
   const params = {
     TableName: 'UserTokens', // Your DynamoDB table name
     Item: {
-      key: {Qnews: subscriptionId}, // Fixed partition key
+      Key: 'Qnews', // Fixed partition key
+      subscriptionId, // Unique identifier for the subscription
       pushToken, // The device token (OneSignal ID)
       createdAt: new Date().toISOString(), // Timestamp
     },
-    ConditionExpression: 'attribute_not_exists(#pushToken)', // Prevent duplicate tokens
-    ExpressionAttributeNames: {
-      '#pushToken': 'pushToken', // Alias for the reserved keyword
-    },
+    ConditionExpression: 'attribute_not_exists(subscriptionId)', // Prevent duplicate tokens
   };
 
   try {
@@ -53,7 +51,7 @@ router.get('/get-tokens', async (req, res) => {
 
   try {
     const result = await dynamoDB.query(params).promise();
-    const tokens = result.Items.map(item => item.pushToken); // Extract only the tokens
+    const tokens = result.Items.map((item) => item.pushToken); // Extract only the tokens
     res.status(200).json({ tokens });
   } catch (error) {
     console.error('Error fetching tokens:', error);
