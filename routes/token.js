@@ -56,5 +56,42 @@ router.get('/get-tokens', async (req, res) => {
   }
 });
 
+router.post('/send-notification', async (req, res) => {
+  const { title, link } = req.body;
+
+  if (!title || !link) {
+    return res.status(400).json({ message: 'Title and link are required.' });
+  }
+
+  try {
+    // Fetch tokens from DynamoDB
+    const params = { TableName: table };
+    const result = await dynamoDB.scan(params).promise();
+    const tokens = result.Items.map(item => item.pushToken);
+
+    // Send notification using OneSignal API
+    const payload = {
+      app_id: "2lpcvyaunuprub6syjnkidcwn",
+      include_player_ids: tokens,
+      headings: { en: "New Video Alert!" },
+      contents: { en: `${title}\nWatch now: ${link}` },
+    };
+
+    await axios.post("https://onesignal.com/api/v1/notifications", payload, {
+      headers: {
+        Authorization: "os_v2_app_3qg4lmbftvhbli3izk7fclprxb5b63wlt5juu5emrhfs5vubtjkdrfgise5vbmgtyhhlfwwduwg6vckczzzzoms7mokwj255oi3jf5a",
+        "Content-Type": "application/json",
+      },
+    });
+
+    res.status(200).json({ message: 'Notification sent successfully.' });
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    res.status(500).json({ message: 'Error sending notification.', error });
+  }
+});
+
+
+
 
 module.exports = router;
