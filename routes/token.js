@@ -68,7 +68,7 @@ router.post('/send-notification', async (req, res) => {
     // Fetch tokens from DynamoDB
     const params = { TableName: table };
     const result = await dynamoDB.scan(params).promise();
-    const tokens = result.Items.map((item) => item.subscriptionId); // Use subscriptionId instead of pushToken
+    const tokens = result.Items.map((item) => item.Qnews); // Use subscriptionId instead of pushToken
 
     if (!tokens || tokens.length === 0) {
       return res.status(400).json({ message: "No valid player IDs found." });
