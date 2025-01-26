@@ -8,6 +8,7 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient();
 // Route to save user token
 router.post('/register-token', async (req, res) => {
   const { token } = req.body; // Extract token from request body
+  console.log(token);
 
   if (!token) {
     return res.status(400).json({ message: 'Token is required.' });
