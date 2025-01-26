@@ -123,12 +123,20 @@ router.post("/", upload.single("image"), async (req, res) => {
       included_segments: ["Subscribed Users"], // Or use `include_player_ids` if you have tokens
     };
 
-    await axios.post("https://onesignal.com/api/v1/notifications", notificationPayload, {
-      headers: {
-        Authorization: `Basic ${process.env.ONESIGNAL_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
+    console.log("Preparing notification payload:", notificationPayload);
+
+    const response = await axios.post(
+      "https://onesignal.com/api/v1/notifications",
+      notificationPayload,
+      {
+        headers: {
+          Authorization: `Basic ${process.env.ONESIGNAL_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    
+    console.log("Notification response:", response.data);
 
     // Send success response
     res.status(200).json({ success: true, message: "News added successfully", newsId });
