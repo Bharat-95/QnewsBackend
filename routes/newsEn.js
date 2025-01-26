@@ -118,23 +118,39 @@ router.post("/", upload.single("image"), async (req, res) => {
     // Prepare notification payload
     const notificationPayload = {
       app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // Replace with your OneSignal App ID
-      headings: { en: "", te: headlineTe }, // Include `headlineTe`
+      headings: { 
+        en: "Latest News!", 
+        te: headlineTe // Telugu headline for localized notifications
+      },
       contents: {
-    
         te: `${headlineTe}`,
-        en: ` ${headlineEn}`,
+        en: `${headlineEn}`
       },
       included_segments: ["All"], // Notify all users
       data: {
-        newsId, // Attach the news ID as additional data
+        newsId, // Attach the news ID for deep linking or additional functionality
         headlineEn,
         headlineTe,
-        image: imageUploadResult.Location, // Include the logo URL
+        image: imageUploadResult.Location, // Include the news image URL for rich media
       },
-       // Add the logo as a large icon
-      big_picture: imageUploadResult.Location, // Add the news image to the notification
+      small_icon: "https://example.com/logo.png", // App logo for notification branding (small icon)
+      large_icon: "https://example.com/logo.png", // App logo displayed as the large icon
+      android_channel_id: "YOUR_ANDROID_CHANNEL_ID", // Ensure notifications use the correct channel
+      big_picture: imageUploadResult.Location, // The large image for the notification
+      android_style: "bigpicture", // Required for rich media notifications on Android
+      android_large_icon: "https://example.com/logo.png", // The icon on the left of the notification
+      ios_attachments: {
+        image: imageUploadResult.Location, // Attach the image for iOS notifications
+      },
+      buttons: [
+        {
+          id: "view",
+          text: "Read More",
+          icon: "ic_menu_view" // Optional icon for the button
+        }
+      ]
     };
-
+    
     console.log("Preparing notification payload:", notificationPayload);
 
     // Send notification
