@@ -1,6 +1,8 @@
 const express = require("express");
 const axios = require("axios");
 const xml2js = require("xml2js");
+const { Expo } = require('expo-server-sdk');
+const AWS = require('aws-sdk');
 
 const router = express.Router();
 
@@ -11,6 +13,8 @@ const CHANNEL_IDS = [
   "UCUVJf9GvRRxUDauQi-qCcfQ", // Channel 3
   "UCvOTCRd0GKMSGeKww86Qw5Q", // Channel 4
 ];
+
+const expo = new Expo();
 
 // Function to fetch videos from a YouTube channel RSS feed
 const fetchVideosFromChannel = async (channelId) => {
@@ -53,7 +57,49 @@ const fetchVideosFromChannel = async (channelId) => {
   }
 };
 
-// Fetch videos from all channels and return them in a response
+// Function to send push notifications using Expo
+const sendPushNotification = async (pushTokens, title, body) => {
+  const messages = pushTokens.map(token => ({
+    to: token,
+    sound: 'default',
+    title: title,
+    body: body,
+    data: { withSome: 'data' },
+  }));
+
+  try {
+    const chunks = expo.chunkPushNotifications(messages);
+    const tickets = [];
+    for (let chunk of chunks) {
+      const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+      tickets.push(...ticketChunk);
+    }
+
+    console.log('Push notifications sent:', tickets);
+    return tickets;
+  } catch (error) {
+    console.error('Error sending push notifications:', error);
+    throw new Error('Error sending push notifications');
+  }
+};
+
+// Function to fetch all user tokens from DynamoDB
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
+const getAllUserTokens = async () => {
+  const params = {
+    TableName: 'UserTokens', // Replace with your table name
+  };
+
+  try {
+    const result = await dynamoDB.scan(params).promise();
+    return result.Items.map(item => item.token); // Return array of push tokens
+  } catch (error) {
+    console.error('Error fetching user tokens:', error);
+    return [];
+  }
+};
+
+// Fetch videos from all channels and send push notifications
 router.get("/", async (req, res) => {
   try {
     const allVideos = [];
@@ -67,12 +113,23 @@ router.get("/", async (req, res) => {
     // Sort videos by publish date (descending order)
     const sortedVideos = allVideos.sort((a, b) => new Date(b.published) - new Date(a.published));
 
+    // Limit to top 20 most recent videos
+    const recentVideos = sortedVideos.slice(0, 20);
 
-    // Return the top 20 most recent videos
+    // Assuming you have a way to store and retrieve user tokens from DynamoDB
+    const usersTokens = await getAllUserTokens(); // This should fetch all registered user push tokens
+
+    // Send push notifications for new videos
+    for (const video of recentVideos) {
+      const title = `New YouTube Video: ${video.title}`;
+      const body = `Check out the latest video: ${video.link}`;
+      await sendPushNotification(usersTokens, title, body);
+    }
+
     res.status(200).json({
       success: true,
-      message: "Videos fetched successfully",
-      data: sortedVideos.slice(0, 20),
+      message: "Videos fetched successfully and notifications sent.",
+      data: recentVideos,
     });
   } catch (error) {
     console.error("Error fetching videos:", error);
