@@ -21,7 +21,11 @@ router.post('/register-token', async (req, res) => {
       pushToken, // The device token (OneSignal ID)
       createdAt: new Date().toISOString(), // Timestamp
     },
-    ConditionExpression: 'attribute_not_exists(token)', // Prevent duplicate tokens
+    // Use an alias for the reserved keyword 'token'
+    ConditionExpression: 'attribute_not_exists(#pushToken)',
+    ExpressionAttributeNames: {
+      '#pushToken': 'pushToken', // Alias for the reserved keyword
+    },
   };
 
   try {
@@ -50,7 +54,7 @@ router.get('/get-tokens', async (req, res) => {
 
   try {
     const result = await dynamoDB.query(params).promise();
-    const tokens = result.Items.map(item => item.token); // Extract only the tokens
+    const tokens = result.Items.map(item => item.pushToken); // Extract only the tokens
     res.status(200).json({ tokens });
   } catch (error) {
     console.error('Error fetching tokens:', error);
