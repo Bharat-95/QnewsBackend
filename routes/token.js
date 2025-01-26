@@ -1,6 +1,8 @@
 const express = require('express');
 const AWS = require('aws-sdk');
 const router = express.Router();
+const axios = require('axios');
+
 
 // Initialize DynamoDB document client
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
