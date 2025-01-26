@@ -40,5 +40,21 @@ router.post('/register-token', async (req, res) => {
   }
 });
 
+router.get('/get-tokens', async (req, res) => {
+  try {
+    const params = {
+      TableName: table,
+    };
+
+    const result = await dynamoDB.scan(params).promise(); // Scan to fetch all items
+    const tokens = result.Items.map((item) => item.pushToken); // Extract push tokens
+
+    res.status(200).json({ tokens });
+  } catch (error) {
+    console.error('Error fetching tokens:', error);
+    res.status(500).json({ message: 'Error fetching tokens.', error });
+  }
+});
+
 
 module.exports = router;
