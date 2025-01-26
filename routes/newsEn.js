@@ -59,14 +59,14 @@ router.get("/", async (req, res) => {
 
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const { headlineEn, headlineTe, newsEn, newsTe, category, employeeId, logoUrl } = req.body; // Accept `logoUrl` from the request body
+    const { headlineEn, headlineTe, newsEn, newsTe, category, employeeId } = req.body; // Accept `logoUrl` from the request body
     const image = req.file;
 
     // Validation
     if (!image) {
       return res.status(400).json({ message: "Image is required" });
     }
-    if (!headlineEn || !headlineTe || !newsEn || !newsTe || !category || !employeeId || !logoUrl) {
+    if (!headlineEn || !headlineTe || !newsEn || !newsTe || !category || !employeeId ) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -128,10 +128,9 @@ router.post("/", upload.single("image"), async (req, res) => {
         newsId, // Attach the news ID as additional data
         headlineEn,
         headlineTe,
-        image: imageUploadResult.Location,
-        logo: logoUrl, // Include the logo URL
+        image: imageUploadResult.Location, // Include the logo URL
       },
-      large_icon: logoUrl, // Add the logo as a large icon
+       // Add the logo as a large icon
       big_picture: imageUploadResult.Location, // Add the news image to the notification
     };
 
