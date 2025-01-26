@@ -120,8 +120,9 @@ router.post("/", upload.single("image"), async (req, res) => {
       app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // Replace with your OneSignal App ID
       headings: { en: "", te: headlineTe }, // Include `headlineTe`
       contents: {
-        en: ` ${headlineEn}`,
+    
         te: `${headlineTe}`,
+        en: ` ${headlineEn}`,
       },
       included_segments: ["All"], // Notify all users
       data: {
