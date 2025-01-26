@@ -7,7 +7,7 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 // Route to save user token
 router.post('/register-token', async (req, res) => {
-  const { pushToken } = req.body; // Extract token from request body
+  const { pushToken, subscriptionId } = req.body; // Extract token from request body
   console.log(pushToken);
 
   if (!pushToken) {
@@ -17,7 +17,7 @@ router.post('/register-token', async (req, res) => {
   const params = {
     TableName: 'UserTokens', // Your DynamoDB table name
     Item: {
-      partitionKey: 'Qnews', // Fixed partition key
+      key: {Qnews: subscriptionId}, // Fixed partition key
       pushToken, // The device token (OneSignal ID)
       createdAt: new Date().toISOString(), // Timestamp
     },
