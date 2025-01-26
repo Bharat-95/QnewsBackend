@@ -7,10 +7,10 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 // Route to save user token
 router.post('/register-token', async (req, res) => {
-  const { token } = req.body; // Extract token from request body
-  console.log(token);
+  const { pushToken } = req.body; // Extract token from request body
+  console.log(pushToken);
 
-  if (!token) {
+  if (!pushToken) {
     return res.status(400).json({ message: 'Token is required.' });
   }
 
@@ -18,7 +18,7 @@ router.post('/register-token', async (req, res) => {
     TableName: 'UserTokens', // Your DynamoDB table name
     Item: {
       partitionKey: 'Qnews', // Fixed partition key
-      token, // The device token (OneSignal ID)
+      pushToken, // The device token (OneSignal ID)
       createdAt: new Date().toISOString(), // Timestamp
     },
     ConditionExpression: 'attribute_not_exists(token)', // Prevent duplicate tokens
