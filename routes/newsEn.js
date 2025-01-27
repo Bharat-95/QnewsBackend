@@ -119,7 +119,7 @@ router.post("/", upload.single("image"), async (req, res) => {
     const notificationPayload = {
       app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // Replace with your OneSignal App ID
       headings: { 
-        en: "Latest News!", 
+        en: "తాజా వార్తలు!", 
         te: headlineTe // Telugu headline for localized notifications
       },
       contents: {
