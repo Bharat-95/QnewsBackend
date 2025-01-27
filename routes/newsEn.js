@@ -138,7 +138,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       ios_attachments: {
         id1: imageUploadResult.Location, // Rich media image for iOS
       },
-      android_channel_id: "YOUR_ANDROID_CHANNEL_ID", // Ensure a valid Android channel is used
+      android_channel_id: "1b44f8cc-89b4-4006-bc9b-56d12ef6dd5e", // Ensure a valid Android channel is used
       buttons: [
         {
           id: "view",
