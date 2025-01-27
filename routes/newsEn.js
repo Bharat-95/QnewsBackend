@@ -117,39 +117,40 @@ router.post("/", upload.single("image"), async (req, res) => {
 
     // Prepare notification payload
     const notificationPayload = {
-      app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // Replace with your OneSignal App ID
+      app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // OneSignal App ID
       headings: { 
-        en: "తాజా వార్తలు!", 
-        te: headlineTe // Telugu headline for localized notifications
+        en: "Latest News", 
+        te: headlineTe // For Telugu users
       },
-      contents: {
-        te: `${headlineTe}`,
-        en: `${headlineEn}`
+      contents: { 
+        en: headlineEn, 
+        te: headlineTe 
       },
       included_segments: ["All"], // Notify all users
       data: {
-        newsId, // Attach the news ID for deep linking or additional functionality
+        newsId,
         headlineEn,
         headlineTe,
-        image: imageUploadResult.Location, // Include the news image URL for rich media
+        image: imageUploadResult.Location, // Include the news image URL for custom logic
       },
-      small_icon: imageUploadResult.Location,
-        // The icon on the left of the notification
+      small_icon: imageUploadResult.Location, // Image for small notification (left side)
+      big_picture: imageUploadResult.Location, // Image for large notification (below headline)
       ios_attachments: {
-        image: imageUploadResult.Location, // Attach the image for iOS notifications
+        id1: imageUploadResult.Location, // Rich media image for iOS
       },
+      android_channel_id: "YOUR_ANDROID_CHANNEL_ID", // Ensure a valid Android channel is used
       buttons: [
         {
           id: "view",
           text: "Read More",
-          icon: "ic_menu_view" // Optional icon for the button
-        }
-      ]
+          icon: "ic_menu_view", // Optional button icon
+        },
+      ],
     };
     
     console.log("Preparing notification payload:", notificationPayload);
-
-    // Send notification
+    
+    // Send notification via OneSignal
     const response = await axios.post(
       "https://onesignal.com/api/v1/notifications",
       notificationPayload,
@@ -160,7 +161,7 @@ router.post("/", upload.single("image"), async (req, res) => {
         },
       }
     );
-
+    
     console.log("Notification response:", response.data);
 
     // Send success response
