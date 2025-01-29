@@ -22,6 +22,7 @@ const errorResponse = (res, message, error) => {
   });
 };
 
+let lastSentNewsId = null;
 
 router.get("/", async (req, res) => {
   try {
@@ -52,6 +53,16 @@ router.get("/", async (req, res) => {
 
     // Get the latest approved post
     const latestPost = allItems[0];
+
+    // Check if notification was already sent for this post
+    if (latestPost.newsId === lastSentNewsId) {
+      console.log("Notification already sent for this post. Skipping...");
+      return res.status(200).json({
+        success: true,
+        message: "Notification already sent for the latest news",
+        latestNews: latestPost,
+      });
+    }
 
     // Prepare the notification payload for OneSignal
     const notificationPayload = {
@@ -88,6 +99,9 @@ router.get("/", async (req, res) => {
 
     console.log("Notification sent successfully:", response.data);
 
+    // Update last sent news ID
+    lastSentNewsId = latestPost.newsId;
+
     res.status(200).json({
       success: true,
       message: "Fetched approved news and sent notification",
@@ -103,7 +117,6 @@ router.get("/", async (req, res) => {
     });
   }
 });
-
 
 
 
@@ -164,6 +177,7 @@ router.post("/", upload.single("image"), async (req, res) => {
         Item: item,
       })
       .promise();
+
 
 
     // Send success response
