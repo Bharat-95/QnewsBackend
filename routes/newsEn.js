@@ -22,7 +22,6 @@ const errorResponse = (res, message, error) => {
   });
 };
 
-let lastSentNewsId = null;
 
 router.get("/", async (req, res) => {
   try {
@@ -32,87 +31,25 @@ router.get("/", async (req, res) => {
     do {
       const params = {
         TableName: table,
-        FilterExpression: "#status = :approved",
-        ExpressionAttributeNames: { "#status": "status" },
-        ExpressionAttributeValues: { ":approved": "Approved" },
-        ExclusiveStartKey: lastEvaluatedKey,
-        ConsistentRead: true,
+        ExclusiveStartKey: lastEvaluatedKey, 
+        ConsistentRead: true, // Pass the last evaluated key for pagination
       };
-
+      
       const data = await dynamoDB.scan(params).promise();
-      allItems = allItems.concat(data.Items);
-      lastEvaluatedKey = data.LastEvaluatedKey;
-    } while (lastEvaluatedKey);
-
-    // Sort by `createdAt` to get the most recent post
-    allItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    if (allItems.length === 0) {
-      return res.status(200).json({ success: true, message: "No approved news found", data: [] });
-    }
-
-    // Get the latest approved post
-    const latestPost = allItems[0];
-
-    // Check if notification was already sent for this post
-    if (latestPost.newsId === lastSentNewsId) {
-      console.log("Notification already sent for this post. Skipping...");
-      return res.status(200).json({
-        success: true,
-        message: "Notification already sent for the latest news",
-        latestNews: latestPost,
-      });
-    }
-
-    // Prepare the notification payload for OneSignal
-    const notificationPayload = {
-      app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // OneSignal App ID
-      headings: { en: "Latest News", te: latestPost.headlineTe },
-      contents: { en: latestPost.headlineEn, te: latestPost.headlineTe },
-      included_segments: ["All"],
-      data: {
-        newsId: latestPost.newsId,
-        headlineEn: latestPost.headlineEn,
-        headlineTe: latestPost.headlineTe,
-        image: latestPost.image,
-      },
-      small_icon: latestPost.image,
-      big_picture: latestPost.image,
-      ios_attachments: { id1: latestPost.image },
-      android_channel_id: "1b44f8cc-89b4-4006-bc9b-56d12ef6dd5e",
-      buttons: [{ id: "view", text: "Read More", icon: "ic_menu_view" }],
-    };
-
-    console.log("Sending notification:", notificationPayload);
-
-    // Send notification via OneSignal
-    const response = await axios.post(
-      "https://onesignal.com/api/v1/notifications",
-      notificationPayload,
-      {
-        headers: {
-          Authorization: `Basic ${process.env.ONESIGNAL_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    console.log("Notification sent successfully:", response.data);
-
-    // Update last sent news ID
-    lastSentNewsId = latestPost.newsId;
+      allItems = allItems.concat(data.Items); // Add the fetched items to the allItems array
+      lastEvaluatedKey = data.LastEvaluatedKey; // Get the last evaluated key for the next scan
+    } while (lastEvaluatedKey); // Continue scanning if there's more data
 
     res.status(200).json({
       success: true,
-      message: "Fetched approved news and sent notification",
-      latestNews: latestPost,
-      notificationResponse: response.data,
+      message: 'Fetched news successfully',
+      data: allItems,
     });
   } catch (error) {
-    console.error("Error fetching approved news or sending notification:", error);
+    console.error('Error fetching news:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching news or sending notification",
+      message: 'Error fetching news',
       error: error.message,
     });
   }
@@ -178,7 +115,54 @@ router.post("/", upload.single("image"), async (req, res) => {
       })
       .promise();
 
-
+    // Prepare notification payload
+    const notificationPayload = {
+      app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // OneSignal App ID
+      headings: { 
+        en: "Latest News", 
+        te: headlineTe // For Telugu users
+      },
+      contents: { 
+        en: headlineEn, 
+        te: headlineTe 
+      },
+      included_segments: ["All"], // Notify all users
+      data: {
+        newsId,
+        headlineEn,
+        headlineTe,
+        image: imageUploadResult.Location, // Include the news image URL for custom logic
+      },
+      small_icon: imageUploadResult.Location, // Image for small notification (left side)
+      big_picture: imageUploadResult.Location, // Image for large notification (below headline)
+      ios_attachments: {
+        id1: imageUploadResult.Location, // Rich media image for iOS
+      },
+      android_channel_id: "1b44f8cc-89b4-4006-bc9b-56d12ef6dd5e", // Ensure a valid Android channel is used
+      buttons: [
+        {
+          id: "view",
+          text: "Read More",
+          icon: "ic_menu_view", // Optional button icon
+        },
+      ],
+    };
+    
+    console.log("Preparing notification payload:", notificationPayload);
+    
+    // Send notification via OneSignal
+    const response = await axios.post(
+      "https://onesignal.com/api/v1/notifications",
+      notificationPayload,
+      {
+        headers: {
+          Authorization: `Basic ${process.env.ONESIGNAL_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    
+    console.log("Notification response:", response.data);
 
     // Send success response
     res.status(200).json({
