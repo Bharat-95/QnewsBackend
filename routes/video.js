@@ -1,8 +1,13 @@
 const express = require("express");
 const axios = require("axios");
 const xml2js = require("xml2js");
+const cron = require("node-cron");
 
 const router = express.Router();
+
+// OneSignal API Key & App ID
+const ONESIGNAL_APP_ID = "dc0dc5b0-259d-4e15-a368-cabe512df1b8";
+const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
 
 // YouTube Channel IDs
 const CHANNEL_IDS = [
@@ -12,7 +17,10 @@ const CHANNEL_IDS = [
   "UCvOTCRd0GKMSGeKww86Qw5Q", // Channel 4
 ];
 
-// Function to fetch videos from a YouTube channel RSS feed
+// Store last video ID for each channel to prevent duplicate notifications
+let lastVideoIds = {};
+
+// Fetch latest videos from a YouTube channel
 const fetchVideosFromChannel = async (channelId) => {
   try {
     const response = await axios.get(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`);
@@ -22,26 +30,24 @@ const fetchVideosFromChannel = async (channelId) => {
     return new Promise((resolve, reject) => {
       parser.parseString(xmlData, (err, result) => {
         if (err) {
-          reject('Error parsing XML');
+          reject("Error parsing XML");
         } else {
           const entries = result.feed.entry || [];
-          
-          // Filter out videos with "Shorts" or "#" in the title
+
           const filteredVideos = entries
-            .map(entry => {
+            .map((entry) => {
               const title = entry.title[0];
-              // Exclude videos with "Shorts" or "#" in the title
-              if (title.includes("Shorts") || title.includes("#")) {
-                return null; // Return null for these videos, which will be filtered out later
-              }
+              if (title.includes("Shorts") || title.includes("#")) return null; // Exclude Shorts and Hashtags
+
               return {
-                videoId: entry['yt:videoId'][0],
-                title: title,
+                videoId: entry["yt:videoId"][0],
+                title,
                 published: entry.published[0],
                 link: entry.link[0].$.href,
+                thumbnail: entry["media:group"][0]["media:thumbnail"][0].$.url, // Fetch thumbnail
               };
             })
-            .filter(video => video !== null); // Remove the null entries (videos that were excluded)
+            .filter((video) => video !== null);
 
           resolve(filteredVideos);
         }
@@ -49,16 +55,68 @@ const fetchVideosFromChannel = async (channelId) => {
     });
   } catch (error) {
     console.error(`Error fetching videos for channel ${channelId}:`, error);
-    throw new Error('Failed to fetch videos');
+    return [];
   }
 };
 
-// Fetch videos from all channels and return them in a response
+// Send OneSignal Notification
+const sendNotification = async (video) => {
+  try {
+    const notificationPayload = {
+      app_id: ONESIGNAL_APP_ID,
+      headings: { en: "New Video Alert!" },
+      contents: { en: video.title },
+      included_segments: ["All"], // Send to all users
+      url: video.link, // Clicking notification redirects to YouTube
+      big_picture: video.thumbnail, // Large notification image
+      small_icon: "ic_stat_onesignal_default", // Custom notification icon
+      android_channel_id: "1b44f8cc-89b4-4006-bc9b-56d12ef6dd5e", // Android channel
+      ios_attachments: { id1: video.thumbnail }, // iOS rich media
+      buttons: [
+        {
+          id: "watch",
+          text: "Watch Now",
+          icon: "ic_menu_view", // Optional Button Icon
+        },
+      ],
+    };
+
+    console.log("📢 Sending Video Notification:", notificationPayload);
+
+    const response = await axios.post("https://onesignal.com/api/v1/notifications", notificationPayload, {
+      headers: {
+        Authorization: `Basic ${ONESIGNAL_API_KEY}`, // Secure API Key
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log("✅ Notification Sent Successfully:", response.data);
+  } catch (error) {
+    console.error("❌ Error sending notification:", error.response?.data || error.message);
+  }
+};
+
+// Check for new videos every 10 minutes
+cron.schedule("*/10 * * * *", async () => {
+  console.log("🔍 Checking for new YouTube videos...");
+  for (const channelId of CHANNEL_IDS) {
+    const videos = await fetchVideosFromChannel(channelId);
+    if (videos.length === 0) continue;
+
+    const latestVideo = videos[0]; // Newest video
+
+    if (lastVideoIds[channelId] !== latestVideo.videoId) {
+      console.log(`🚀 New video detected: ${latestVideo.title}`);
+      lastVideoIds[channelId] = latestVideo.videoId; // Update latest video
+      await sendNotification(latestVideo); // Send notification
+    }
+  }
+});
+
+// API Route: Fetch Latest Videos from All Channels
 router.get("/", async (req, res) => {
   try {
-    const allVideos = [];
-
-    // Fetch videos from each channel
+    let allVideos = [];
     for (const channelId of CHANNEL_IDS) {
       const videosFromChannel = await fetchVideosFromChannel(channelId);
       allVideos.push(...videosFromChannel);
@@ -67,8 +125,6 @@ router.get("/", async (req, res) => {
     // Sort videos by publish date (descending order)
     const sortedVideos = allVideos.sort((a, b) => new Date(b.published) - new Date(a.published));
 
-
-    // Return the top 20 most recent videos
     res.status(200).json({
       success: true,
       message: "Videos fetched successfully",
