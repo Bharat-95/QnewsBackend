@@ -26,11 +26,13 @@ const errorResponse = (res, message, error) => {
 
 const sendScheduledNotification = async () => {
   try {
-    console.log("🔍 Checking for newly approved news in the last 30 minutes...");
+    console.log("⏳ Checking for newly approved news in the last 10 minutes...");
 
-    const thirtyMinutesAgo = new Date();
-    thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30);
+    // Calculate timestamp for 10 minutes ago
+    const tenMinutesAgo = new Date();
+    tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
 
+    // Query to fetch approved news in the last 10 minutes
     const params = {
       TableName: table,
       FilterExpression: "#status = :approved AND #createdAt >= :timestamp",
@@ -40,29 +42,35 @@ const sendScheduledNotification = async () => {
       },
       ExpressionAttributeValues: {
         ":approved": "Approved",
-        ":timestamp": thirtyMinutesAgo.toISOString(),
+        ":timestamp": tenMinutesAgo.toISOString(),
       },
     };
 
     const data = await dynamoDB.scan(params).promise();
 
-    console.log("📊 DynamoDB Scan Result:", JSON.stringify(data, null, 2));
+    console.log("📊 DynamoDB Scan Result:", JSON.stringify(data.Items, null, 2));
 
     if (!data.Items || data.Items.length === 0) {
-      console.log("🚫 No new approved news in the last 30 minutes. Skipping notification.");
+      console.log("🚫 No new approved news in the last 10 minutes. Skipping notification.");
       return;
     }
 
+    // Get the latest approved news
     const latestNews = data.Items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
 
     console.log("✅ Latest approved news for notification:", latestNews);
 
+    // Shorten the headline
     const shortHeadline = latestNews.headlineEn.substring(0, Math.floor(latestNews.headlineEn.length / 2)) + "...";
 
+    // OneSignal notification payload
     const notificationPayload = {
       app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8",
       headings: { en: "Latest News", te: latestNews.headlineTe },
-      contents: { en: shortHeadline, te: latestNews.headlineTe.substring(0, Math.floor(latestNews.headlineTe.length / 2)) + "..." },
+      contents: {
+        en: shortHeadline,
+        te: latestNews.headlineTe.substring(0, Math.floor(latestNews.headlineTe.length / 2)) + "...",
+      },
       included_segments: ["All"],
       data: {
         newsId: latestNews.newsId,
@@ -79,6 +87,7 @@ const sendScheduledNotification = async () => {
 
     console.log("📨 Sending notification:", JSON.stringify(notificationPayload, null, 2));
 
+    // Send notification via OneSignal
     await axios.post("https://onesignal.com/api/v1/notifications", notificationPayload, {
       headers: {
         Authorization: `Basic ${process.env.ONESIGNAL_API_KEY}`,
@@ -88,13 +97,13 @@ const sendScheduledNotification = async () => {
 
     console.log("✅ Notification Sent Successfully");
   } catch (error) {
-    console.error("❌ Error sending scheduled notifications:", error.message);
+    console.error("❌ Error sending notifications:", error.message);
   }
 };
 
 // ✅ Schedule the notification job using `node-cron` to run every 10 minutes
 cron.schedule("*/10 * * * *", () => {
-  console.log("⏳ Running scheduled notification job...");
+  console.log("⏳ Running scheduled notification job at:", new Date().toISOString());
   sendScheduledNotification();
 });
 
