@@ -4,6 +4,7 @@ const multer = require("multer");
 const { v4: uuidv4 } = require("uuid");
 const axios = require('axios');
 const schedule = require("node-schedule");
+const cron = require("node-cron");
 
 const router = express.Router();
 const s3 = new AWS.S3();
@@ -27,11 +28,9 @@ const sendScheduledNotification = async () => {
   try {
     console.log("🔍 Checking for newly approved news in the last 30 minutes...");
 
-    // Calculate the timestamp for 30 minutes ago
     const thirtyMinutesAgo = new Date();
-    thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 1);
+    thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30);
 
-    // Fetch news with status "Approved" that was created in the last 30 minutes
     const params = {
       TableName: table,
       FilterExpression: "#status = :approved AND #createdAt >= :timestamp",
@@ -47,22 +46,21 @@ const sendScheduledNotification = async () => {
 
     const data = await dynamoDB.scan(params).promise();
 
+    console.log("📊 DynamoDB Scan Result:", JSON.stringify(data, null, 2));
+
     if (!data.Items || data.Items.length === 0) {
       console.log("🚫 No new approved news in the last 30 minutes. Skipping notification.");
       return;
     }
 
-    // Get the latest approved news (most recent from the last 30 minutes)
     const latestNews = data.Items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
 
     console.log("✅ Latest approved news for notification:", latestNews);
 
-    // Shorten the headline for the small notification
     const shortHeadline = latestNews.headlineEn.substring(0, Math.floor(latestNews.headlineEn.length / 2)) + "...";
 
-    // Prepare OneSignal notification payload
     const notificationPayload = {
-      app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8", // OneSignal App ID
+      app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8",
       headings: { en: "Latest News", te: latestNews.headlineTe },
       contents: { en: shortHeadline, te: latestNews.headlineTe.substring(0, Math.floor(latestNews.headlineTe.length / 2)) + "..." },
       included_segments: ["All"],
@@ -72,16 +70,15 @@ const sendScheduledNotification = async () => {
         headlineTe: latestNews.headlineTe,
         image: latestNews.image,
       },
-      small_icon: latestNews.image, // Small image (left side in notification)
-      big_picture: latestNews.image, // Large image (below headline in expanded notification)
+      small_icon: latestNews.image,
+      big_picture: latestNews.image,
       ios_attachments: { id1: latestNews.image },
       android_channel_id: "1b44f8cc-89b4-4006-bc9b-56d12ef6dd5e",
       buttons: [{ id: "view", text: "Read More", icon: "ic_menu_view" }],
     };
 
-    console.log("📨 Sending notification:", notificationPayload);
+    console.log("📨 Sending notification:", JSON.stringify(notificationPayload, null, 2));
 
-    // Send notification via OneSignal
     await axios.post("https://onesignal.com/api/v1/notifications", notificationPayload, {
       headers: {
         Authorization: `Basic ${process.env.ONESIGNAL_API_KEY}`,
@@ -95,10 +92,13 @@ const sendScheduledNotification = async () => {
   }
 };
 
-// ✅ Schedule the notification job to run every 30 minutes
-schedule.scheduleJob("*/1 * * * *", sendScheduledNotification);
+// ✅ Schedule the notification job using `node-cron` to run every 10 minutes
+cron.schedule("*/10 * * * *", () => {
+  console.log("⏳ Running scheduled notification job...");
+  sendScheduledNotification();
+});
 
-console.log("⏳ Cron job scheduled to run every 30 minutes...");
+console.log("⏳ Cron job scheduled to run every 10 minutes using node-cron...");
 
 
 router.get("/", async (req, res) => {
