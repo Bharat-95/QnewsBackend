@@ -29,7 +29,7 @@ const sendScheduledNotification = async () => {
 
     // Calculate the timestamp for 30 minutes ago
     const thirtyMinutesAgo = new Date();
-    thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30);
+    thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 1);
 
     // Fetch news with status "Approved" that was created in the last 30 minutes
     const params = {
@@ -96,7 +96,7 @@ const sendScheduledNotification = async () => {
 };
 
 // ✅ Schedule the notification job to run every 30 minutes
-schedule.scheduleJob("*/10 * * * *", sendScheduledNotification);
+schedule.scheduleJob("*/1 * * * *", sendScheduledNotification);
 
 console.log("⏳ Cron job scheduled to run every 30 minutes...");
 
