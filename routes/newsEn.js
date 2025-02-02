@@ -61,7 +61,7 @@ const sendScheduledNotification = async () => {
     console.log("✅ Latest approved news for notification:", latestNews);
 
     // Shorten the headline
-    const shortHeadline = latestNews.headlineEn.substring(0, Math.floor(latestNews.headlineEn.length / 2)) + "...";
+    const shortHeadline = latestNews.headlineTe.substring(0, Math.floor(latestNews.headlineTe.length / 2)) + "...";
 
     // OneSignal notification payload
     const notificationPayload = {
@@ -74,7 +74,6 @@ const sendScheduledNotification = async () => {
       included_segments: ["All"],
       data: {
         newsId: latestNews.newsId,
-        headlineEn: latestNews.headlineEn,
         headlineTe: latestNews.headlineTe,
         image: latestNews.image,
       },
