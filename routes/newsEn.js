@@ -96,7 +96,7 @@ const sendScheduledNotification = async () => {
 };
 
 // ✅ Schedule the notification job to run every 30 minutes
-schedule.scheduleJob("*/30 * * * *", sendScheduledNotification);
+schedule.scheduleJob("*/10 * * * *", sendScheduledNotification);
 
 console.log("⏳ Cron job scheduled to run every 30 minutes...");
 
