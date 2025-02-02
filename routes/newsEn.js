@@ -28,9 +28,11 @@ const sendScheduledNotification = async () => {
   try {
     console.log("⏳ Checking for newly approved news in the last 10 minutes...");
 
+    // Calculate timestamp for 10 minutes ago
     const tenMinutesAgo = new Date();
     tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
 
+    // Query to fetch approved news in the last 10 minutes
     const params = {
       TableName: table,
       FilterExpression: "#status = :approved AND #createdAt >= :timestamp",
@@ -53,40 +55,39 @@ const sendScheduledNotification = async () => {
       return;
     }
 
+    // Get the latest approved news
     const latestNews = data.Items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
 
     console.log("✅ Latest approved news for notification:", latestNews);
 
-    // **Use Only Telugu Headline**
-    const headlineTe = latestNews.headlineTe;  
+    // Shorten the headline
+    const shortHeadline = latestNews.headlineEn.substring(0, Math.floor(latestNews.headlineEn.length / 2)) + "...";
 
-    // Construct the deep link (for app) and web link
-    const newsId = latestNews.newsId;
-    const webUrl = `https://www.qgroupmedia.com/news/${newsId}`; // 🔹 **Correct Website URL**
-    const appDeepLink = `qnews://news/${newsId}`; // 🔹 **App Deep Link**
-
+    // OneSignal notification payload
     const notificationPayload = {
       app_id: "dc0dc5b0-259d-4e15-a368-cabe512df1b8",
-      headings: { en: "తాజా వార్తలు" }, // **Title in Telugu**
-      contents: { te: headlineTe }, // **Only Telugu Content**
+      headings: { en: "Latest News", te: latestNews.headlineTe },
+      contents: {
+        en: shortHeadline,
+        te: latestNews.headlineTe.substring(0, Math.floor(latestNews.headlineTe.length / 2)) + "...",
+      },
       included_segments: ["All"],
       data: {
         newsId: latestNews.newsId,
-        headlineTe: latestNews.headlineTe, // **Only Telugu**
+        headlineEn: latestNews.headlineEn,
+        headlineTe: latestNews.headlineTe,
         image: latestNews.image,
-        deep_link: appDeepLink, // 🔥 App Redirect
-        url: webUrl, // 🔥 Website Redirect
       },
       small_icon: latestNews.image,
       big_picture: latestNews.image,
       ios_attachments: { id1: latestNews.image },
       android_channel_id: "1b44f8cc-89b4-4006-bc9b-56d12ef6dd5e",
-      buttons: [{ id: "view", text: "ఇంకా చదవండి", icon: "ic_menu_view" }], // **Button in Telugu**
-      url: webUrl, // 🔥 **Website opens if the app is not installed**
+      buttons: [{ id: "view", text: "Read More", icon: "ic_menu_view" }],
     };
 
     console.log("📨 Sending notification:", JSON.stringify(notificationPayload, null, 2));
 
+    // Send notification via OneSignal
     await axios.post("https://onesignal.com/api/v1/notifications", notificationPayload, {
       headers: {
         Authorization: `Basic ${process.env.ONESIGNAL_API_KEY}`,
@@ -99,7 +100,6 @@ const sendScheduledNotification = async () => {
     console.error("❌ Error sending notifications:", error.message);
   }
 };
-
 
 // ✅ Schedule the notification job using `node-cron` to run every 10 minutes
 cron.schedule("*/10 * * * *", () => {
