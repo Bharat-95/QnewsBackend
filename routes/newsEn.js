@@ -111,7 +111,7 @@ console.log("⏳ Cron job scheduled to run every 10 minutes using node-cron...")
 
 router.get("/", async (req, res) => {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit) : 200; // Fetch only 10 at a time
+    const limit = req.query.limit ? parseInt(req.query.limit) : 100; // Fetch only 10 at a time
     let lastEvaluatedKey = req.query.lastKey ? JSON.parse(req.query.lastKey) : null;
 
     const params = {
