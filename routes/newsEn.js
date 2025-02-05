@@ -111,35 +111,34 @@ console.log("⏳ Cron job scheduled to run every 10 minutes using node-cron...")
 
 router.get("/", async (req, res) => {
   try {
-    let allItems = [];
-    let lastEvaluatedKey = null;
+    const limit = req.query.limit ? parseInt(req.query.limit) : 10; // Fetch only 10 at a time
+    let lastEvaluatedKey = req.query.lastKey ? JSON.parse(req.query.lastKey) : null;
 
-    do {
-      const params = {
-        TableName: table,
-        ExclusiveStartKey: lastEvaluatedKey, 
-        ConsistentRead: true, // Pass the last evaluated key for pagination
-      };
-      
-      const data = await dynamoDB.scan(params).promise();
-      allItems = allItems.concat(data.Items); // Add the fetched items to the allItems array
-      lastEvaluatedKey = data.LastEvaluatedKey; // Get the last evaluated key for the next scan
-    } while (lastEvaluatedKey); // Continue scanning if there's more data
+    const params = {
+      TableName: table,
+      Limit: limit,
+      ExclusiveStartKey: lastEvaluatedKey,
+      ConsistentRead: false // Set to false for better performance
+    };
+
+    const data = await dynamoDB.scan(params).promise();
 
     res.status(200).json({
       success: true,
       message: 'Fetched news successfully',
-      data: allItems,
+      data: data.Items,
+      lastKey: data.LastEvaluatedKey ? JSON.stringify(data.LastEvaluatedKey) : null
     });
   } catch (error) {
     console.error('Error fetching news:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching news',
-      error: error.message,
+      error: error.message
     });
   }
 });
+
 
 
 
