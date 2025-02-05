@@ -108,7 +108,7 @@ const getLastSentNewsId = async () => {
   try {
     const params = {
       TableName: "NotificationTracker",
-      Key: { id: "lastSentNews" },
+      Key: { qnews: "lastSentNews" },
     };
     const result = await dynamoDB.get(params).promise();
     return result.Item ? result.Item.newsId : null;
