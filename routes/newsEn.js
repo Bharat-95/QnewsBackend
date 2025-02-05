@@ -31,6 +31,7 @@ const sendScheduledNotification = async () => {
     // Calculate timestamp for 10 minutes ago
     const tenMinutesAgo = new Date();
     tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
+    const tenMinutesAgoISO = tenMinutesAgo.toISOString();
 
     // Query to fetch approved news in the last 10 minutes
     const params = {
@@ -42,7 +43,7 @@ const sendScheduledNotification = async () => {
       },
       ExpressionAttributeValues: {
         ":approved": "Approved",
-        ":timestamp": tenMinutesAgo.toISOString(),
+        ":timestamp": tenMinutesAgoISO,
       },
     };
 
@@ -51,7 +52,7 @@ const sendScheduledNotification = async () => {
     console.log("📊 DynamoDB Scan Result:", JSON.stringify(data.Items, null, 2));
 
     if (!data.Items || data.Items.length === 0) {
-      console.log("🚫 No new approved news in the last 10 minutes. Skipping notification.");
+      console.log(" No new approved news in the last 10 minutes. Skipping notification.");
       return;
     }
 
