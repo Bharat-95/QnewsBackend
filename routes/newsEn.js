@@ -26,40 +26,39 @@ const errorResponse = (res, message, error) => {
 
 const sendScheduledNotification = async () => {
   try {
-    console.log("⏳ Checking for newly approved news in the last 10 minutes...");
+    console.log("⏳ Checking for the most recent approved news...");
 
-    // Calculate timestamp for 10 minutes ago
-    const tenMinutesAgo = new Date();
-    tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
-    const tenMinutesAgoISO = tenMinutesAgo.toISOString();
-
-    // Query to fetch approved news in the last 10 minutes
+    // Fetch the latest approved news
     const params = {
       TableName: table,
-      FilterExpression: "#status = :approved AND #createdAt >= :timestamp",
+      FilterExpression: "#status = :approved",
       ExpressionAttributeNames: {
         "#status": "status",
-        "#createdAt": "createdAt",
       },
       ExpressionAttributeValues: {
         ":approved": "Approved",
-        ":timestamp": tenMinutesAgoISO,
       },
     };
 
     const data = await dynamoDB.scan(params).promise();
-
     console.log("📊 DynamoDB Scan Result:", JSON.stringify(data.Items, null, 2));
 
     if (!data.Items || data.Items.length === 0) {
-      console.log(" No new approved news in the last 10 minutes. Skipping notification.");
+      console.log("⚠️ No approved news available. Skipping notification.");
       return;
     }
 
-    // Get the latest approved news
+    // Get the most recent approved news (sorted by createdAt timestamp)
     const latestNews = data.Items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
 
     console.log("✅ Latest approved news for notification:", latestNews);
+
+    // Store the last sent notification ID (to avoid duplicates)
+    const lastSentNewsId = await getLastSentNewsId();
+    if (latestNews.newsId === lastSentNewsId) {
+      console.log("⚠️ This news was already sent in the last notification. Skipping.");
+      return;
+    }
 
     // Shorten the headline
     const shortHeadline = latestNews.headlineTe.substring(0, Math.floor(latestNews.headlineTe.length / 2)) + "...";
@@ -70,7 +69,7 @@ const sendScheduledNotification = async () => {
       headings: { en: "Latest News", te: latestNews.headlineTe },
       contents: {
         en: shortHeadline,
-        te: latestNews.headlineTe.substring(0, Math.floor(latestNews.headlineTe.length / 2)) + "...",
+        te: shortHeadline,
       },
       included_segments: ["All"],
       data: {
@@ -96,8 +95,40 @@ const sendScheduledNotification = async () => {
     });
 
     console.log("✅ Notification Sent Successfully");
+
+    // Update the last sent news ID
+    await updateLastSentNewsId(latestNews.newsId);
   } catch (error) {
     console.error("❌ Error sending notifications:", error.message);
+  }
+};
+
+// ✅ Function to Get Last Sent News ID (From Database or Cache)
+const getLastSentNewsId = async () => {
+  try {
+    const params = {
+      TableName: "NotificationTracker",
+      Key: { id: "lastSentNews" },
+    };
+    const result = await dynamoDB.get(params).promise();
+    return result.Item ? result.Item.newsId : null;
+  } catch (error) {
+    console.error("❌ Error fetching last sent news ID:", error.message);
+    return null;
+  }
+};
+
+// ✅ Function to Update Last Sent News ID
+const updateLastSentNewsId = async (newsId) => {
+  try {
+    const params = {
+      TableName: "NotificationTracker",
+      Item: { id: "lastSentNews", newsId: newsId },
+    };
+    await dynamoDB.put(params).promise();
+    console.log("✅ Last sent news ID updated successfully:", newsId);
+  } catch (error) {
+    console.error("❌ Error updating last sent news ID:", error.message);
   }
 };
 
@@ -108,6 +139,7 @@ cron.schedule("*/10 * * * *", () => {
 });
 
 console.log("⏳ Cron job scheduled to run every 10 minutes using node-cron...");
+
 
 
 router.get("/", async (req, res) => {
