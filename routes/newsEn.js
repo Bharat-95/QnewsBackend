@@ -185,7 +185,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       category,
       employeeId,
       image: imageUploadResult.Location,
-      status: "Pending",
+      status: "Approved",
       createdAt: new Date().toISOString(),
       likes: 0,
       comments: [],
