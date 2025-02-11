@@ -25,7 +25,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 const TABLE_NAME = "Voted"; // Your DynamoDB table name
 
 // POST API to Submit Vote
-router.post("/submit-vote", async (req, res) => {
+router.post("/", async (req, res) => {
   const { name, phone, vote } = req.body;
 
   if (!name || !phone || !vote) {
