@@ -24,39 +24,36 @@ router.post("/", async (req, res) => {
     }
   
     try {
-      // ✅ Check if Phone Number Already Voted
+      // ✅ Check if Phone Number Already Voted (Fix: Check with Phone)
       const existingVote = await dynamoDB
-        .get({
+        .scan({
           TableName: table,
-          Key: { phone },
+          FilterExpression: "phone = :phoneValue",
+          ExpressionAttributeValues: { ":phoneValue": phone },
         })
         .promise();
   
-      if (existingVote.Item) {
+      if (existingVote.Items.length > 0) {
+        console.log("📌 Duplicate Vote Detected for Phone:", phone);
         return res.status(400).json({ message: "📌 ఫోన్ నంబర్ నుండి ఇప్పటికే ఓటు వేశారు!" });
       }
   
       // ✅ Prepare Vote Data for Insertion
       const voteId = uuidv4(); // Generate a Unique ID
       const item = {
-        voteId,
+        qnews: voteId, // ✅ Store Unique ID as Partition Key
         name,
         phone,
         vote,
-        timestamp: new Date().toISOString(), // Store Submission Time
+        timestamp: new Date().toISOString(), // ✅ Store Submission Time
       };
   
       // ✅ Save Vote to DynamoDB
-      await dynamoDB
-        .put({
-          TableName: table,
-          Item: item,
-        })
-        .promise();
+      await dynamoDB.put({ TableName: table, Item: item }).promise();
   
       return res.status(200).json({ message: "✅ ధన్యవాదాలు! మీ ఓటు నమోదైంది." });
     } catch (error) {
-      console.error("DynamoDB error:", error);
+      console.error("DynamoDB Error:", error);
       return res.status(500).json({ message: "❌ సర్వర్ సమస్య, దయచేసి మళ్లీ ప్రయత్నించండి." });
     }
   });
