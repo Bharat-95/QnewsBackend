@@ -1,15 +1,31 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const { DynamoDBDocumentClient, GetCommand, PutCommand } = require("@aws-sdk/lib-dynamodb");
 
-const client = new DynamoDBClient({ region: "your-region" });
+const app = express();
+const PORT = process.env.PORT || 5000;
+const router = express.Router();
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+
+// AWS DynamoDB Configuration
+const client = new DynamoDBClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 const docClient = DynamoDBDocumentClient.from(client);
 const TABLE_NAME = "Voted"; // Your DynamoDB table name
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
-  }
-
+// POST API to Submit Vote
+router.post("/submit-vote", async (req, res) => {
   const { name, phone, vote } = req.body;
 
   if (!name || !phone || !vote) {
@@ -17,7 +33,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Check for duplicate phone number
+    // Check if the phone number already exists
     const existingVote = await docClient.send(
       new GetCommand({
         TableName: TABLE_NAME,
@@ -42,4 +58,7 @@ export default async function handler(req, res) {
     console.error("DynamoDB error:", error);
     return res.status(500).json({ message: "Server error, please try again" });
   }
-}
+});
+
+
+module.exports = router;
