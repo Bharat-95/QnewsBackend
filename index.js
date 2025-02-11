@@ -18,6 +18,7 @@ const videoRoutes = require('./routes/video');
 const paperRoutes = require('./routes/paper');
 const liveRoutes = require('./routes/live');
 const tokenRoutes = require('./routes/token');
+const vouteRoutes = require('./routes/vote');
 
 
 const app = express();
@@ -43,6 +44,7 @@ app.use('/video', videoRoutes);
 app.use('/paper', paperRoutes);
 app.use('/live', liveRoutes);
 app.use('/token', tokenRoutes);
+app.use('/submit-vote', vouteRoutes);
 
 
 app.get('/', (req, res) => {
