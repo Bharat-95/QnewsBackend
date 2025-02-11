@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.744.0",
+    "@aws-sdk/lib-dynamodb": "^3.744.0",
     "amazon-cognito-identity-js": "^6.3.12",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.7.9",
