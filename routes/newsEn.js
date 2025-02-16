@@ -116,18 +116,11 @@ router.get("/latest50", async (req, res) => {
     let allItems = [];
     let lastEvaluatedKey = null;
 
-    // ✅ Fetch all "Approved" news using pagination
+    // ✅ Fetch all pages from the NewsEn table
     do {
       const params = {
         TableName: table,
-        FilterExpression: "#status = :approved",
-        ExpressionAttributeNames: {
-          "#status": "status",
-        },
-        ExpressionAttributeValues: {
-          ":approved": "Approved",
-        },
-        ExclusiveStartKey: lastEvaluatedKey, // Pagination key
+        ExclusiveStartKey: lastEvaluatedKey, // Continue from last scanned page
       };
 
       const data = await dynamoDB.scan(params).promise();
@@ -136,18 +129,35 @@ router.get("/latest50", async (req, res) => {
         allItems = allItems.concat(data.Items);
       }
 
-      lastEvaluatedKey = data.LastEvaluatedKey; // Get next page key
-    } while (lastEvaluatedKey); // Continue fetching until all pages are retrieved
+      lastEvaluatedKey = data.LastEvaluatedKey; // Update the pagination key
+    } while (lastEvaluatedKey); // Keep fetching until all records are retrieved
 
-    // ✅ Sort latest news by `createdAt` timestamp
+    console.log(`✅ Total news articles fetched: ${allItems.length}`);
+
+    if (allItems.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No news found",
+        data: [],
+      });
+    }
+
+    // ✅ Convert `createdAt` to timestamps before sorting
     const sortedNews = allItems
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 50); // ✅ Take only the latest 50 news
+      .filter(item => item.createdAt) // Ensure `createdAt` exists
+      .map(item => ({
+        ...item,
+        createdAtTimestamp: new Date(item.createdAt).getTime(), // Convert UTC to timestamp
+      }))
+      .sort((a, b) => b.createdAtTimestamp - a.createdAtTimestamp) // Sort by timestamp
+      .slice(0, 50); // ✅ Select only the latest 50
+
+    console.log(`✅ Returning the latest 50 news articles.`);
 
     res.status(200).json({
       success: true,
       message: "Fetched latest 50 news successfully",
-      data: sortedNews,
+      data: sortedNews.map(({ createdAtTimestamp, ...rest }) => rest), // Remove extra timestamp field
     });
   } catch (error) {
     console.error("❌ Error fetching latest 50 news:", error);
@@ -158,6 +168,7 @@ router.get("/latest50", async (req, res) => {
     });
   }
 });
+
 
 
 router.get("/", async (req, res) => {
