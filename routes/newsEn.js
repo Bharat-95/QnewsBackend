@@ -113,19 +113,28 @@ console.log("⏳ Cron job scheduled to run every 10 minutes using node-cron...")
 
 router.get("/", async (req, res) => {
   try {
-    const params = {
-      TableName: table,
-      IndexName: "createdAt-index",  // 🔹 Ensure you have a GSI on createdAt
-      ScanIndexForward: false,       // 🔹 This ensures descending order (latest first)
-      Limit: 100,                    // 🔹 Optional: Limit number of results
-    };
+    let allItems = [];
+    let lastEvaluatedKey = null;
 
-    const data = await dynamoDB.query(params).promise();
+    do {
+      const params = {
+        TableName: table,
+        ExclusiveStartKey: lastEvaluatedKey,
+        ConsistentRead: true,
+      };
+
+      const data = await dynamoDB.scan(params).promise();
+      allItems = allItems.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    // 🔹 Sort the data by `createdAt` in descending order (latest first)
+    allItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.status(200).json({
       success: true,
       message: "Fetched news successfully",
-      data: data.Items,
+      data: allItems,
     });
   } catch (error) {
     console.error("Error fetching news:", error);
