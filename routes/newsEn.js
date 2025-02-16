@@ -59,7 +59,7 @@ const sendScheduledNotification = async () => {
     // Get the most recent approved news (sorted by createdAt timestamp)
     const latestNews = data.Items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
 
-    console.log("✅ Latest approved news for notification:", latestNews);
+
 
     // Shorten the headline
     const shortHeadline = latestNews.headlineTe.substring(0, Math.floor(latestNews.headlineTe.length / 2)) + "...";
@@ -85,7 +85,7 @@ const sendScheduledNotification = async () => {
       buttons: [{ id: "view", text: "Read More", icon: "ic_menu_view" }],
     };
 
-    console.log("📨 Sending notification:", JSON.stringify(notificationPayload, null, 2));
+
 
     // Send notification via OneSignal
     await axios.post("https://onesignal.com/api/v1/notifications", notificationPayload, {
@@ -95,7 +95,6 @@ const sendScheduledNotification = async () => {
       },
     });
 
-    console.log("✅ Notification Sent Successfully");
   } catch (error) {
     console.error("❌ Error sending notifications:", error.message);
   }
@@ -103,71 +102,9 @@ const sendScheduledNotification = async () => {
 
 // ✅ Schedule the notification job using `node-cron` to run every 10 minutes
 cron.schedule("*/10 * * * *", () => {
-  console.log("⏳ Running scheduled notification job at:", new Date().toISOString());
   sendScheduledNotification();
 });
 
-console.log("⏳ Cron job scheduled to run every 10 minutes using node-cron...");
-
-
-// New route to fetch only the latest 50 news articles
-router.get("/latest50", async (req, res) => {
-  try {
-    let allItems = [];
-    let lastEvaluatedKey = null;
-
-    // ✅ Fetch all pages from the NewsEn table
-    do {
-      const params = {
-        TableName: table,
-        ExclusiveStartKey: lastEvaluatedKey, // Continue from last scanned page
-      };
-
-      const data = await dynamoDB.scan(params).promise();
-
-      if (data.Items) {
-        allItems = allItems.concat(data.Items);
-      }
-
-      lastEvaluatedKey = data.LastEvaluatedKey; // Update the pagination key
-    } while (lastEvaluatedKey); // Keep fetching until all records are retrieved
-
-    console.log(`✅ Total news articles fetched: ${allItems.length}`);
-
-    if (allItems.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: "No news found",
-        data: [],
-      });
-    }
-
-    // ✅ Convert `createdAt` to timestamps before sorting
-    const sortedNews = allItems
-      .filter(item => item.createdAt) // Ensure `createdAt` exists
-      .map(item => ({
-        ...item,
-        createdAtTimestamp: new Date(item.createdAt).getTime(), // Convert UTC to timestamp
-      }))
-      .sort((a, b) => b.createdAtTimestamp - a.createdAtTimestamp) // Sort by timestamp
-      .slice(0, 50); // ✅ Select only the latest 50
-
-    console.log(`✅ Returning the latest 50 news articles.`);
-
-    res.status(200).json({
-      success: true,
-      message: "Fetched latest 50 news successfully",
-      data: sortedNews.map(({ createdAtTimestamp, ...rest }) => rest), // Remove extra timestamp field
-    });
-  } catch (error) {
-    console.error("❌ Error fetching latest 50 news:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching latest 50 news",
-      error: error.message,
-    });
-  }
-});
 
 
 
