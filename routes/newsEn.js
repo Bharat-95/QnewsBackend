@@ -145,6 +145,7 @@ router.get("/", async (req, res) => {
 
 
 
+
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const { headlineEn, headlineTe, newsEn, newsTe, category, employeeId } = req.body; // Accept `logoUrl` from the request body
