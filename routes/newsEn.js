@@ -110,6 +110,51 @@ cron.schedule("*/10 * * * *", () => {
 console.log("⏳ Cron job scheduled to run every 10 minutes using node-cron...");
 
 
+// New route to fetch only the latest 50 news articles
+router.get("/latest50", async (req, res) => {
+  try {
+    const params = {
+      TableName: table,
+      FilterExpression: "#status = :approved",
+      ExpressionAttributeNames: {
+        "#status": "status",
+      },
+      ExpressionAttributeValues: {
+        ":approved": "Approved",
+      },
+      Limit: 100, // Fetch more and then slice (DynamoDB does not support sorting directly)
+    };
+
+    const data = await dynamoDB.scan(params).promise();
+
+    if (!data.Items || data.Items.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No approved news found",
+        data: [],
+      });
+    }
+
+    // ✅ Sort latest 50 by `createdAt` timestamp
+    const sortedNews = data.Items
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 50);
+
+    res.status(200).json({
+      success: true,
+      message: "Fetched latest 50 news successfully",
+      data: sortedNews,
+    });
+  } catch (error) {
+    console.error("Error fetching latest 50 news:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching latest 50 news",
+      error: error.message,
+    });
+  }
+});
+
 
 router.get("/", async (req, res) => {
   try {
