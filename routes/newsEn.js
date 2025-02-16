@@ -106,6 +106,63 @@ cron.schedule("*/10 * * * *", () => {
 });
 
 
+router.get("/latest50", async (req, res) => {
+  try {
+    let allItems = [];
+    let lastEvaluatedKey = null;
+
+    do {
+      // Define scan parameters (no filtering, fetch everything)
+      const params = {
+        TableName: table,
+        ExclusiveStartKey: lastEvaluatedKey, // For pagination
+      };
+
+      // Fetch page of results
+      const data = await dynamoDB.scan(params).promise();
+
+      // Merge current batch with all items
+      allItems = allItems.concat(data.Items);
+
+      // Check if more pages exist
+      lastEvaluatedKey = data.LastEvaluatedKey || null;
+
+      console.log(`🔄 Scanned ${allItems.length} items so far...`);
+    } while (lastEvaluatedKey); // Continue scanning until all pages are retrieved
+
+    console.log(`✅ Total items scanned: ${allItems.length}`);
+
+    if (allItems.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No news found",
+        data: [],
+      });
+    }
+
+    // ✅ Convert `createdAt` to timestamps and sort by latest first
+    const sortedNews = allItems
+      .map(item => ({
+        ...item,
+        createdAtTimestamp: new Date(item.createdAt).getTime(), // Convert UTC to timestamp
+      }))
+      .sort((a, b) => b.createdAtTimestamp - a.createdAtTimestamp) // Sort by latest first
+      .slice(0, 50); // ✅ Take only the latest 50
+
+    res.status(200).json({
+      success: true,
+      message: "Fetched latest 50 news successfully",
+      data: sortedNews.map(({ createdAtTimestamp, ...rest }) => rest), // Remove extra field
+    });
+  } catch (error) {
+    console.error("❌ Error fetching latest 50 news:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching latest 50 news",
+      error: error.message,
+    });
+  }
+});
 
 
 router.get("/", async (req, res) => {
