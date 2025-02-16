@@ -112,23 +112,25 @@ router.get("/latest50", async (req, res) => {
     let lastEvaluatedKey = null;
 
     do {
-      // Define scan parameters (no filtering, fetch everything)
+      // Define scan parameters (fetch all pages)
       const params = {
         TableName: table,
-        ExclusiveStartKey: lastEvaluatedKey, // For pagination
+        ExclusiveStartKey: lastEvaluatedKey, // Fetch next page
       };
 
       // Fetch page of results
       const data = await dynamoDB.scan(params).promise();
 
-      // Merge current batch with all items
-      allItems = allItems.concat(data.Items);
+      if (data.Items) {
+        allItems = [...allItems, ...data.Items]; // Merge with previous data
+      }
 
-      // Check if more pages exist
+      // Check if there's more data
       lastEvaluatedKey = data.LastEvaluatedKey || null;
 
       console.log(`🔄 Scanned ${allItems.length} items so far...`);
-    } while (lastEvaluatedKey); // Continue scanning until all pages are retrieved
+
+    } while (lastEvaluatedKey); // Continue scanning until no more pages exist
 
     console.log(`✅ Total items scanned: ${allItems.length}`);
 
@@ -140,20 +142,33 @@ router.get("/latest50", async (req, res) => {
       });
     }
 
-    // ✅ Convert `createdAt` to timestamps and sort by latest first
-    const sortedNews = allItems
-      .map(item => ({
-        ...item,
-        createdAtTimestamp: new Date(item.createdAt).getTime(), // Convert UTC to timestamp
-      }))
-      .sort((a, b) => b.createdAtTimestamp - a.createdAtTimestamp) // Sort by latest first
-      .slice(0, 50); // ✅ Take only the latest 50
+    // ✅ Convert `createdAt` to timestamps and handle invalid dates
+    const validNews = allItems
+      .map((item) => {
+        const timestamp = new Date(item.createdAt).getTime();
+        return isNaN(timestamp) ? null : { ...item, createdAtTimestamp: timestamp };
+      })
+      .filter((item) => item !== null); // Remove any items with invalid timestamps
+
+    if (validNews.length === 0) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: All news items have invalid timestamps!",
+        data: [],
+      });
+    }
+
+    // ✅ Sort news from latest to oldest
+    const sortedNews = validNews
+      .sort((a, b) => b.createdAtTimestamp - a.createdAtTimestamp)
+      .slice(0, 50); // ✅ Keep only latest 50
 
     res.status(200).json({
       success: true,
       message: "Fetched latest 50 news successfully",
-      data: sortedNews.map(({ createdAtTimestamp, ...rest }) => rest), // Remove extra field
+      data: sortedNews.map(({ createdAtTimestamp, ...rest }) => rest), // Remove extra timestamp field
     });
+
   } catch (error) {
     console.error("❌ Error fetching latest 50 news:", error);
     res.status(500).json({
@@ -163,6 +178,7 @@ router.get("/latest50", async (req, res) => {
     });
   }
 });
+
 
 
 router.get("/", async (req, res) => {
