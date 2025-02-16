@@ -113,32 +113,36 @@ console.log("⏳ Cron job scheduled to run every 10 minutes using node-cron...")
 // New route to fetch only the latest 50 news articles
 router.get("/latest50", async (req, res) => {
   try {
-    const params = {
-      TableName: table,
-      FilterExpression: "#status = :approved",
-      ExpressionAttributeNames: {
-        "#status": "status",
-      },
-      ExpressionAttributeValues: {
-        ":approved": "Approved",
-      },
-      Limit: 100, // Fetch more and then slice (DynamoDB does not support sorting directly)
-    };
+    let allItems = [];
+    let lastEvaluatedKey = null;
 
-    const data = await dynamoDB.scan(params).promise();
+    // ✅ Fetch all "Approved" news using pagination
+    do {
+      const params = {
+        TableName: table,
+        FilterExpression: "#status = :approved",
+        ExpressionAttributeNames: {
+          "#status": "status",
+        },
+        ExpressionAttributeValues: {
+          ":approved": "Approved",
+        },
+        ExclusiveStartKey: lastEvaluatedKey, // Pagination key
+      };
 
-    if (!data.Items || data.Items.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: "No approved news found",
-        data: [],
-      });
-    }
+      const data = await dynamoDB.scan(params).promise();
 
-    // ✅ Sort latest 50 by `createdAt` timestamp
-    const sortedNews = data.Items
+      if (data.Items) {
+        allItems = allItems.concat(data.Items);
+      }
+
+      lastEvaluatedKey = data.LastEvaluatedKey; // Get next page key
+    } while (lastEvaluatedKey); // Continue fetching until all pages are retrieved
+
+    // ✅ Sort latest news by `createdAt` timestamp
+    const sortedNews = allItems
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 50);
+      .slice(0, 50); // ✅ Take only the latest 50 news
 
     res.status(200).json({
       success: true,
@@ -146,7 +150,7 @@ router.get("/latest50", async (req, res) => {
       data: sortedNews,
     });
   } catch (error) {
-    console.error("Error fetching latest 50 news:", error);
+    console.error("❌ Error fetching latest 50 news:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching latest 50 news",
