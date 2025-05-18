@@ -830,6 +830,88 @@ router.get("/:newsId/related", async (req, res) => {
   }
 });
 
+router.post("/greetings/upload", upload.single("file"), async (req, res) => {
+  try {
+    const { title, mediaType } = req.body;
+    const file = req.file;
+
+    if (!title || !mediaType || !file) {
+      return res.status(400).json({
+        message: "Title, mediaType, and file are required.",
+      });
+    }
+
+    const greetingId = uuidv4();
+    const fileExtension = file.originalname.split('.').pop();
+    const s3Key = `greetings/${greetingId}.${fileExtension}`;
+
+    const uploadResult = await s3
+      .upload({
+        Bucket: "qnewsimages",
+        Key: s3Key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      })
+      .promise();
+
+    const item = {
+      greetingId,
+      title,
+      mediaType, // 'image' or 'video'
+      fileUrl: uploadResult.Location,
+      createdAt: new Date().toISOString(),
+    };
+
+    await dynamoDB
+      .put({
+        TableName: "Greetings",
+        Item: item,
+      })
+      .promise();
+
+    res.status(201).json({
+      success: true,
+      message: "Greeting uploaded successfully",
+      data: item,
+    });
+  } catch (error) {
+    console.error("❌ Error uploading greeting:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to upload greeting",
+      error: error.message,
+    });
+  }
+});
+
+
+// GET /greetings
+router.get("/greetings", async (req, res) => {
+  try {
+    const result = await dynamoDB
+      .scan({ TableName: "Greetings" })
+      .promise();
+
+    const sortedGreetings = result.Items.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Fetched greetings successfully",
+      data: sortedGreetings,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching greetings:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch greetings",
+      error: error.message,
+    });
+  }
+});
+
+
 
 
 
