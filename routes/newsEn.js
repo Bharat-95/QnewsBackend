@@ -845,7 +845,7 @@ router.post("/greetings/upload", upload.single("file"), async (req, res) => {
 
     const greetingId = uuidv4();
     const fileExtension = file.originalname.split('.').pop();
-    const s3Key = `news-images.${fileExtension}`;
+    const s3Key = `greetings/${uuidv4()}.${fileExtension}`;
 
     const uploadResult = await s3
       .upload({
@@ -889,8 +889,6 @@ router.post("/greetings/upload", upload.single("file"), async (req, res) => {
 
 // GET /greetings
 router.get("/greetings/get", async (req, res) => {
-
-  console.log("Hello")
   try {
     const result = await dynamoDB
       .scan({ TableName: "Greetings" })
