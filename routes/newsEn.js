@@ -888,7 +888,7 @@ router.post("/greetings/upload", upload.single("file"), async (req, res) => {
 
 
 // GET /greetings
-router.get("/greetings", async (req, res) => {
+router.get("/greetings/get", async (req, res) => {
 
   console.log("Hello")
   try {
