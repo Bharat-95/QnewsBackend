@@ -835,7 +835,6 @@ router.post("/greetings/upload", upload.single("file"), async (req, res) => {
     const { title, mediaType } = req.body;
     const file = req.file;
 
-    console.log(req.body)
 
     if (!title || !mediaType || !file) {
       return res.status(400).json({
