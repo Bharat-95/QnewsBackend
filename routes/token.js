@@ -87,6 +87,9 @@ router.post('/send-notification', async (req, res) => {
       big_picture: image, // Large image in the notification
       url: link, // URL to open when notification is clicked
       chrome_web_icon: logo, // Notification icon
+      ios_attachments: {
+    id1: image, // Shows as inline image in iOS notification
+  },
     };
 
     console.log("Preparing notification payload:", payload);
