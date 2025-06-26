@@ -16,7 +16,7 @@ router.post("/signup", async (req, res) => {
 
     let assignedRole = role || "User";
 
-    if (!email || !password || !firstName || !lastName || !phoneNumber) {
+    if (!email || !password || !firstName || !lastName ) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -25,14 +25,16 @@ router.post("/signup", async (req, res) => {
         .status(400)
         .json({ message: "Please enter a valid email address" });
     }
+if (phoneNumber) {
+  const phoneRegex = /^\+\d{1,3}\s?\d{10}$/;
+  if (!phoneRegex.test(phoneNumber)) {
+    return res.status(400).json({
+      message:
+        "Phone number must include a valid country code and 10-digit number (e.g., +91 7993291554)",
+    });
+  }
+}
 
-    const phoneRegex = /^\+\d{1,3}\s?\d{10}$/;
-    if (!phoneRegex.test(phoneNumber)) {
-      return res.status(400).json({
-        message:
-          "Phone number must include a valid country code and 10-digit number (e.g., +91 7993291554)",
-      });
-    }
 
     const passwordRegex =
       /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
@@ -64,7 +66,7 @@ router.post("/signup", async (req, res) => {
       password: hashedPassword,
       firstName,
       lastName,
-      phoneNumber,
+      phoneNumber: phoneNumber ||  null,
       role: assignedRole,
       status: "Active",
       createdAt: new Date().toISOString(),
